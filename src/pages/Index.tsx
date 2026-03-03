@@ -130,7 +130,7 @@ const Index = () => {
               ].map((s, i) => (
                 <div
                   key={i}
-                  className="glass rounded-2xl p-5 group will-change-transform transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:shadow-elevated"
+                  className="rounded-2xl p-5 group border border-primary-foreground/15 bg-primary-foreground/10 will-change-transform transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:shadow-elevated"
                 >
                   <p className="text-2xl font-serif font-bold text-primary-foreground mb-1">{s.val}</p>
                   <p className="text-xs text-primary-foreground/40">{s.label}</p>
