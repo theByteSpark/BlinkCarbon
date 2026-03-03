@@ -158,7 +158,7 @@ const Onboarding = () => {
                 <div
                   key={i}
                   ref={setStepRef(i)}
-                  className="min-h-[70vh] flex items-center py-12"
+                  className="min-h-[50vh] flex items-center py-10"
                 >
                   <div className="grid md:grid-cols-12 gap-8 w-full items-center">
                     {/* Left - Step indicator */}
@@ -221,8 +221,8 @@ const Onboarding = () => {
                         initial={{ opacity: 0, y: 40, scale: 0.95 }}
                         whileInView={{ opacity: 1, y: 0, scale: 1 }}
                         viewport={{ once: true, margin: "-20%" }}
-                        transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-                        className={`rounded-3xl p-10 md:p-14 relative overflow-hidden transition-all duration-700 ${
+                        transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                        className={`rounded-3xl p-10 md:p-14 relative overflow-hidden transition-all duration-500 ${
                           i === activeStep
                             ? "bg-deep shadow-elevated"
                             : "bg-card border border-border"
