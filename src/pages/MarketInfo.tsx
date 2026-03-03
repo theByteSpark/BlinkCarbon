@@ -193,7 +193,7 @@ const MarketInfo = () => (
                 <ArrowUpRight className="w-5 h-5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
               </Link>
               <Link
-                to="/onboarding"
+                to="/onboarding#steps"
                 className="group inline-flex items-center gap-3 px-8 py-4 glass text-primary-foreground font-semibold rounded-2xl transition-all hover:bg-primary-foreground/10"
               >
                 View Steps

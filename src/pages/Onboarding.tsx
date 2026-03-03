@@ -28,10 +28,13 @@ const Onboarding = () => {
   const steps = tab === "seller" ? sellerSteps : buyerSteps;
   const stepsContainerRef = useRef<HTMLDivElement>(null);
   const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Scroll-driven step progression
   useEffect(() => {
-    const observer = new IntersectionObserver(
+    observerRef.current?.disconnect();
+
+    observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
@@ -50,17 +53,34 @@ const Onboarding = () => {
     );
 
     stepRefs.current.forEach((ref) => {
-      if (ref) observer.observe(ref);
+      if (ref) observerRef.current?.observe(ref);
     });
 
-    return () => observer.disconnect();
+    return () => {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
+    };
+  }, [tab, steps.length]);
+
+  // Reset active step when tab changes
+  useEffect(() => {
+    setActiveStep(0);
   }, [tab]);
 
-  // Reset refs when tab changes
-  useEffect(() => {
-    stepRefs.current = stepRefs.current.slice(0, steps.length);
-    setActiveStep(0);
-  }, [tab, steps.length]);
+  const setStepRef = (index: number) => (element: HTMLDivElement | null) => {
+    const observer = observerRef.current;
+    const previousElement = stepRefs.current[index];
+
+    if (previousElement && observer) {
+      observer.unobserve(previousElement);
+    }
+
+    stepRefs.current[index] = element;
+
+    if (element && observer) {
+      observer.observe(element);
+    }
+  };
 
   // Progress percentage
   const progress = ((activeStep) / (steps.length - 1)) * 100;
@@ -108,7 +128,7 @@ const Onboarding = () => {
       </div>
 
       {/* Sticky progress bar */}
-      <div className="sticky top-16 z-30 bg-background/80 backdrop-blur-md border-b border-border">
+      <div className="sticky top-20 z-30 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-4 py-3 flex items-center gap-4">
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
             Step {activeStep + 1} of {steps.length}
@@ -125,7 +145,7 @@ const Onboarding = () => {
       </div>
 
       {/* Scroll-driven Steps */}
-      <section className="pb-28 md:pb-36" ref={stepsContainerRef}>
+      <section id="steps" className="pb-28 md:pb-36 scroll-mt-24" ref={stepsContainerRef}>
         <div className="container mx-auto px-4">
           <AnimatePresence mode="wait">
             <motion.div
@@ -137,7 +157,7 @@ const Onboarding = () => {
               {steps.map((step, i) => (
                 <div
                   key={i}
-                  ref={(el) => { stepRefs.current[i] = el; }}
+                  ref={setStepRef(i)}
                   className="min-h-[70vh] flex items-center py-12"
                 >
                   <div className="grid md:grid-cols-12 gap-8 w-full items-center">

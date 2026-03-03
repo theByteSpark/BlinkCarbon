@@ -128,7 +128,10 @@ const Index = () => {
                 { val: "35M+", label: "Credits issued in India" },
                 { val: "1000+", label: "Registered projects" },
               ].map((s, i) => (
-                <div key={i} className="glass rounded-2xl p-5 group hover:bg-primary-foreground/8 transition-all duration-300">
+                <div
+                  key={i}
+                  className="glass rounded-2xl p-5 group will-change-transform transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:shadow-elevated"
+                >
                   <p className="text-2xl font-serif font-bold text-primary-foreground mb-1">{s.val}</p>
                   <p className="text-xs text-primary-foreground/40">{s.label}</p>
                 </div>
