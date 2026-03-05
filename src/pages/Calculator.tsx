@@ -1,45 +1,187 @@
-import { useState, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Download, Mail, Sparkles, TrendingUp, Zap } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
-const industryFactors: Record<string, { factor: number; emoji: string }> = {
-  "Renewable Energy": { factor: 0.85, emoji: "⚡" },
-  "Waste Management": { factor: 0.6, emoji: "♻️" },
-  "Industrial Manufacturing": { factor: 0.45, emoji: "🏭" },
-  "Agriculture & Forestry": { factor: 0.7, emoji: "🌿" },
-  "Transportation": { factor: 0.35, emoji: "🚛" },
-  "Construction": { factor: 0.4, emoji: "🏗️" },
+const sectors = {
+  Energy: { emoji: "⚡" },
+  Industry: { emoji: "🏭" },
+  "Waste handling and disposal": { emoji: "♻️" },
+};
+
+const renewableCategories = [
+  "Solar",
+  "Wind",
+  "Hydro",
+  "Green Hydrogen",
+  "Biomass",
+  "Captive RE",
+];
+
+const industryTypes = [
+  "Pharma",
+  "Chemical",
+  "Textile",
+  "Iron And steel",
+  "Cement",
+  "Other",
+];
+
+const fieldLabelClass = "text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 block";
+const underlinedInputClass = "w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors text-sm";
+const underlinedSelectClass = "w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground focus:outline-none focus:border-primary transition-colors text-sm appearance-none cursor-pointer";
+
+const toNumber = (value) => {
+  const parsed = parseFloat(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
 };
 
 const Calculator = () => {
-  const [industry, setIndustry] = useState("Renewable Energy");
-  const [reduction, setReduction] = useState("");
-  const [result, setResult] = useState<null | { credits: number; low: number; high: number }>(null);
+  const [sector, setSector] = useState("Energy");
+  const [result, setResult] = useState(null);
   const [showContact, setShowContact] = useState(false);
   const [contact, setContact] = useState({ email: "", phone: "" });
   const [sent, setSent] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
-  const sliderRef = useRef<HTMLInputElement>(null);
+  const [validationError, setValidationError] = useState("");
+  const [energyData, setEnergyData] = useState({
+    isRenewableProject: "Yes",
+    renewableCategory: "Solar",
+    plantCapacity: "",
+    capacityUnit: "MWh",
+    generation: "",
+    unit: "MWh",
+    projectEmission: "",
+  });
+  const [industryData, setIndustryData] = useState({
+    industryType: "Pharma",
+    otherIndustryName: "",
+    baseline: "",
+    projectDescription: "",
+    projectEmission: "",
+    leakage: "",
+  });
+  const [wasteData, setWasteData] = useState({
+    removedGasType: "Methane",
+    methane: "",
+    isElectricityExported: "No",
+    electricityExport: "",
+    electricityExportUnit: "MWh",
+    projectEmission: "",
+  });
 
-  const calculate = () => {
-    const tons = parseFloat(reduction);
-    if (isNaN(tons) || tons <= 0) return;
-    setIsCalculating(true);
-    // Simulate a brief calculation animation
-    setTimeout(() => {
-      const factor = industryFactors[industry]?.factor || 0.5;
-      const credits = Math.round(tons * factor);
-      setResult({ credits, low: credits * 300, high: credits * 2500 });
-      setIsCalculating(false);
-    }, 800);
+  const clearEstimate = () => {
+    setResult(null);
+    setShowContact(false);
+    setSent(false);
+    setValidationError("");
   };
 
-  const handleExport = (e: React.FormEvent) => {
+  const updateEnergyData = (patch) => {
+    setEnergyData((prev) => ({ ...prev, ...patch }));
+    clearEstimate();
+  };
+
+  const updateIndustryData = (patch) => {
+    setIndustryData((prev) => ({ ...prev, ...patch }));
+    clearEstimate();
+  };
+
+  const updateWasteData = (patch) => {
+    setWasteData((prev) => ({ ...prev, ...patch }));
+    clearEstimate();
+  };
+
+  const calculateEnergy = () => {
+    const generation = toNumber(energyData.generation);
+    const emission = toNumber(energyData.projectEmission);
+    const isCaptiveRenewable = energyData.isRenewableProject === "Yes" && energyData.renewableCategory === "Captive RE";
+
+    if (isCaptiveRenewable) {
+      return energyData.unit === "MWh" ? generation * 0.710 : generation * 0.00010;
+    }
+
+    return energyData.unit === "MWh"
+      ? generation * 0.710 - emission
+      : generation * 0.000710 - emission;
+  };
+
+  const calculateIndustry = () => {
+    const baseline = toNumber(industryData.baseline);
+    const projectEmission = toNumber(industryData.projectEmission);
+    const leakage = toNumber(industryData.leakage);
+    return baseline - projectEmission - leakage;
+  };
+
+  const calculateWaste = () => {
+    const methane = toNumber(wasteData.methane);
+    const projectEmission = toNumber(wasteData.projectEmission);
+
+    if (wasteData.isElectricityExported === "Yes") {
+      const electricityExport = toNumber(wasteData.electricityExport);
+      const exportFactor = wasteData.electricityExportUnit === "MWh" ? 0.710 : 0.000710;
+      return methane * 29 - projectEmission + electricityExport * exportFactor;
+    }
+
+    return methane * 29 - projectEmission;
+  };
+
+  const isFilled = (value) => String(value).trim() !== "";
+
+  const getValidationError = () => {
+    if (sector === "Energy") {
+      if (!isFilled(energyData.generation)) return "Enter average yearly electricity generation.";
+      const requiresEmission = energyData.isRenewableProject === "No" || energyData.renewableCategory !== "Captive RE";
+      if (requiresEmission && !isFilled(energyData.projectEmission)) return "Enter project emission.";
+    }
+
+    if (sector === "Industry") {
+      if (!isFilled(industryData.baseline)) return "Enter baseline emission.";
+      if (!isFilled(industryData.projectEmission)) return "Enter project emission.";
+      if (!isFilled(industryData.leakage)) return "Enter leakage emission.";
+    }
+
+    if (sector === "Waste handling and disposal") {
+      if (!isFilled(wasteData.methane)) return "Enter amount of methane destroyed.";
+      if (!isFilled(wasteData.projectEmission)) return "Enter project emission.";
+      if (wasteData.isElectricityExported === "Yes" && !isFilled(wasteData.electricityExport)) {
+        return "Enter amount of electricity exported.";
+      }
+    }
+
+    return "";
+  };
+
+  const calculate = () => {
+    const error = getValidationError();
+    if (error) {
+      setValidationError(error);
+      setResult(null);
+      return;
+    }
+
+    setValidationError("");
+
+    const credits =
+      sector === "Energy"
+        ? calculateEnergy()
+        : sector === "Industry"
+          ? calculateIndustry()
+          : calculateWaste();
+
+    const roundedCredits = Math.max(0, Math.round(credits));
+
+    setResult({
+      credits: roundedCredits,
+      low: roundedCredits * 300,
+      high: roundedCredits * 2500,
+    });
+  };
+
+  const handleExport = (e) => {
     e.preventDefault();
     setSent(true);
-    const report = `CarbonBridge - Carbon Credit Estimate\n\nIndustry: ${industry}\nAnnual CO₂ Reduction: ${reduction} tons\nEstimated Credits: ${result?.credits}\nEstimated Value: ₹${result?.low?.toLocaleString()} - ₹${result?.high?.toLocaleString()}\n\nContact: ${contact.email} | ${contact.phone}\n\nDisclaimer: This is an estimate. Actual credits depend on verification and market conditions.`;
+    const report = `CarbonBridge - Carbon Credit Estimate\n\nsector: ${sector}\nEstimated Credits: ${result?.credits}\nEstimated Value: ₹${result?.low?.toLocaleString()} - ₹${result?.high?.toLocaleString()}\n\nContact: ${contact.email} | ${contact.phone}\n\nDisclaimer: This is an estimate. Actual credits depend on verification and market conditions.`;
     const blob = new Blob([report], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -48,9 +190,6 @@ const Calculator = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
-
-  const reductionNum = parseFloat(reduction) || 0;
-  const factor = industryFactors[industry]?.factor || 0.5;
 
   return (
     <div className="min-h-screen bg-background">
@@ -78,18 +217,21 @@ const Calculator = () => {
               className="md:col-span-5"
             >
               <div className="md:sticky md:top-32 space-y-8">
-                {/* Industry Selector */}
+                {/* sector Selector */}
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 block">Industry Sector</label>
+                  <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 block">sector Sector</label>
                   <div className="grid grid-cols-2 gap-2">
-                    {Object.entries(industryFactors).map(([k, v]) => (
+                    {Object.entries(sectors).map(([k, v]) => (
                       <motion.button
                         key={k}
                         whileHover={{ scale: 1.03, y: -2 }}
                         whileTap={{ scale: 0.97 }}
-                        onClick={() => { setIndustry(k); setResult(null); setShowContact(false); setSent(false); }}
+                        onClick={() => {
+                          setSector(k);
+                          clearEstimate();
+                        }}
                         className={`text-left px-4 py-3 rounded-xl text-xs font-medium transition-all duration-300 ${
-                          industry === k
+                          sector === k
                             ? "bg-gradient-forest text-primary-foreground shadow-glow"
                             : "bg-card border border-border text-muted-foreground hover:border-primary/20 hover:text-foreground hover:shadow-soft"
                         }`}
@@ -101,6 +243,335 @@ const Calculator = () => {
                   </div>
                 </div>
 
+                {sector === "Energy" && (
+                  <div className="space-y-6">
+                    <div>
+                      <p className={fieldLabelClass}>Is this renewable project?</p>
+                      <div className="flex items-center gap-5">
+                        <label className="flex items-center gap-2 text-sm text-foreground">
+                          <input
+                            type="radio"
+                            name="isRenewableProject"
+                            value="Yes"
+                            checked={energyData.isRenewableProject === "Yes"}
+                            onChange={() => {
+                              updateEnergyData({ isRenewableProject: "Yes" });
+                            }}
+                            className="accent-primary"
+                          />
+                          Yes
+                        </label>
+                        <label className="flex items-center gap-2 text-sm text-foreground">
+                          <input
+                            type="radio"
+                            name="isRenewableProject"
+                            value="No"
+                            checked={energyData.isRenewableProject === "No"}
+                            onChange={() => {
+                              updateEnergyData({ isRenewableProject: "No" });
+                            }}
+                            className="accent-primary"
+                          />
+                          No
+                        </label>
+                      </div>
+                    </div>
+
+                    {energyData.isRenewableProject === "Yes" && (
+                      <div>
+                        <label className={fieldLabelClass}>Select renewable project category</label>
+                        <select
+                          value={energyData.renewableCategory}
+                          onChange={(e) => {
+                            updateEnergyData({ renewableCategory: e.target.value });
+                          }}
+                          className={underlinedSelectClass}
+                        >
+                          {renewableCategories.map((category) => (
+                            <option key={category} value={category}>
+                              {category}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className={fieldLabelClass}>Capacity of the plant</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                        <input
+                          type="number"
+                          placeholder="Enter capacity"
+                          value={energyData.plantCapacity}
+                          onChange={(e) => {
+                            updateEnergyData({ plantCapacity: e.target.value });
+                          }}
+                          className={`${underlinedInputClass} sm:col-span-2`}
+                        />
+                        <select
+                          value={energyData.capacityUnit}
+                          onChange={(e) => {
+                            updateEnergyData({ capacityUnit: e.target.value });
+                          }}
+                          className={underlinedSelectClass}
+                        >
+                          <option value="MWh">MWh</option>
+                          <option value="KWh">KWh</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className={fieldLabelClass}>Avg electricity generation yearly</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                        <input
+                          type="number"
+                          placeholder="Enter yearly generation"
+                          value={energyData.generation}
+                          onChange={(e) => {
+                            updateEnergyData({ generation: e.target.value });
+                          }}
+                          className={`${underlinedInputClass} sm:col-span-2`}
+                        />
+                        <select
+                          value={energyData.unit}
+                          onChange={(e) => {
+                            updateEnergyData({ unit: e.target.value });
+                          }}
+                          className={underlinedSelectClass}
+                        >
+                          <option value="MWh">MWh</option>
+                          <option value="KWh">KWh</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {(energyData.isRenewableProject === "No" || energyData.renewableCategory !== "Captive RE") && (
+                      <div>
+                        <div className="flex items-center justify-between gap-3 mb-3">
+                          <label className={`${fieldLabelClass} mb-0`}>Project Emission</label>
+                          <span className="text-xs text-muted-foreground">* tCO2e</span>
+                        </div>
+                        <input
+                          type="number"
+                          placeholder="Enter project emission"
+                          value={energyData.projectEmission}
+                          onChange={(e) => {
+                            updateEnergyData({ projectEmission: e.target.value });
+                          }}
+                          className={underlinedInputClass}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+{sector === "Industry" && (
+  <div className="space-y-6">
+    <div>
+      <label className={fieldLabelClass}>Type of Industry</label>
+      <select
+        value={industryData.industryType}
+        onChange={(e) => {
+          updateIndustryData({ industryType: e.target.value });
+        }}
+        className={underlinedSelectClass}
+      >
+        {industryTypes.map((type) => (
+          <option key={type} value={type}>
+            {type}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {industryData.industryType === "Other" && (
+      <div>
+        <label className={fieldLabelClass}>Industry Name</label>
+        <input
+          type="text"
+          placeholder="Enter industry name"
+          value={industryData.otherIndustryName}
+          onChange={(e) => {
+            updateIndustryData({ otherIndustryName: e.target.value });
+          }}
+          className={underlinedInputClass}
+        />
+      </div>
+    )}
+
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <label className={`${fieldLabelClass} mb-0`}>Baseline Emission</label>
+        <span className="text-xs text-muted-foreground">* tCO2e</span>
+      </div>
+      <input
+        type="number"
+        placeholder="Enter baseline emission"
+        value={industryData.baseline}
+        onChange={(e) => {
+          updateIndustryData({ baseline: e.target.value });
+        }}
+        className={underlinedInputClass}
+      />
+    </div>
+
+    <div>
+      <label className={fieldLabelClass}>Project Description</label>
+      <textarea
+        rows={3}
+        placeholder="Enter project description"
+        value={industryData.projectDescription}
+        onChange={(e) => {
+          updateIndustryData({ projectDescription: e.target.value });
+        }}
+        className={`${underlinedInputClass} resize-none`}
+      />
+    </div>
+
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <label className={`${fieldLabelClass} mb-0`}>Project Emission</label>
+        <span className="text-xs text-muted-foreground">* tCO2e</span>
+      </div>
+      <input
+        type="number"
+        placeholder="Enter project emission"
+        value={industryData.projectEmission}
+        onChange={(e) => {
+          updateIndustryData({ projectEmission: e.target.value });
+        }}
+        className={underlinedInputClass}
+      />
+    </div>
+
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <label className={`${fieldLabelClass} mb-0`}>Leakage Emission</label>
+        <span className="text-xs text-muted-foreground">* tCO2e</span>
+      </div>
+      <input
+        type="number"
+        placeholder="Enter leakage emission"
+        value={industryData.leakage}
+        onChange={(e) => {
+          updateIndustryData({ leakage: e.target.value });
+        }}
+        className={underlinedInputClass}
+      />
+    </div>
+  </div>
+)}
+
+{sector === "Waste handling and disposal" && (
+  <div className="space-y-6">
+    <div>
+      <label className={fieldLabelClass}>Remove Gas</label>
+      <select
+        value={wasteData.removedGasType}
+        onChange={(e) => {
+          updateWasteData({ removedGasType: e.target.value });
+        }}
+        className={underlinedSelectClass}
+      >
+        <option value="Methane">Methane</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <label className={`${fieldLabelClass} mb-0`}>Amount of methane Destroyed</label>
+        <span className="text-xs text-muted-foreground">* t</span>
+      </div>
+      <input
+        type="number"
+        placeholder="Enter amount destroyed"
+        value={wasteData.methane}
+        onChange={(e) => {
+          updateWasteData({ methane: e.target.value });
+        }}
+        className={underlinedInputClass}
+      />
+    </div>
+
+    <div>
+      <p className={fieldLabelClass}>Electricity exported</p>
+      <div className="flex items-center gap-5">
+        <label className="flex items-center gap-2 text-sm text-foreground">
+          <input
+            type="radio"
+            name="isElectricityExported"
+            value="Yes"
+            checked={wasteData.isElectricityExported === "Yes"}
+            onChange={() => {
+              updateWasteData({ isElectricityExported: "Yes" });
+            }}
+            className="accent-primary"
+          />
+          Yes
+        </label>
+        <label className="flex items-center gap-2 text-sm text-foreground">
+          <input
+            type="radio"
+            name="isElectricityExported"
+            value="No"
+            checked={wasteData.isElectricityExported === "No"}
+            onChange={() => {
+              updateWasteData({ isElectricityExported: "No" });
+            }}
+            className="accent-primary"
+          />
+          No
+        </label>
+      </div>
+    </div>
+
+    {wasteData.isElectricityExported === "Yes" && (
+      <div>
+        <label className={fieldLabelClass}>Amount of electricity exported</label>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+          <input
+            type="number"
+            placeholder="Enter electricity exported"
+            value={wasteData.electricityExport}
+            onChange={(e) => {
+              updateWasteData({ electricityExport: e.target.value });
+            }}
+            className={`${underlinedInputClass} sm:col-span-2`}
+          />
+          <select
+            value={wasteData.electricityExportUnit}
+            onChange={(e) => {
+              updateWasteData({ electricityExportUnit: e.target.value });
+            }}
+            className={underlinedSelectClass}
+          >
+            <option value="MWh">MWh</option>
+            <option value="KWh">KWh</option>
+          </select>
+        </div>
+      </div>
+    )}
+
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <label className={`${fieldLabelClass} mb-0`}>Project Emission</label>
+        <span className="text-xs text-muted-foreground">* tCO2e</span>
+      </div>
+      <input
+        type="number"
+        placeholder="Enter project emission"
+        value={wasteData.projectEmission}
+        onChange={(e) => {
+          updateWasteData({ projectEmission: e.target.value });
+        }}
+        className={underlinedInputClass}
+      />
+    </div>
+  </div>
+)}
+
                 {/* Conversion factor display */}
                 <motion.div
                   layout
@@ -111,67 +582,22 @@ const Calculator = () => {
                   </div>
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Conversion Rate</p>
-                    <p className="text-sm font-bold text-foreground">{factor} credits per ton CO₂</p>
+                    <p className="text-sm font-bold text-foreground">Sector based carbon credit calculation</p>
                   </div>
                 </motion.div>
 
-                {/* CO2 Input with slider */}
-                <div>
-                  <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 block">Annual CO₂ Reduction (metric tons)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={reduction}
-                    onChange={(e) => { setReduction(e.target.value); setResult(null); setShowContact(false); setSent(false); }}
-                    className="w-full px-0 py-4 bg-transparent border-0 border-b-2 border-border text-3xl font-serif font-bold text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary transition-colors"
-                    placeholder="5,000"
-                  />
-                  {/* Range slider */}
-                  <input
-                    ref={sliderRef}
-                    type="range"
-                    min="100"
-                    max="50000"
-                    step="100"
-                    value={reductionNum || 100}
-                    onChange={(e) => { setReduction(e.target.value); setResult(null); setShowContact(false); setSent(false); }}
-                    className="w-full mt-4 h-2 bg-muted rounded-full appearance-none cursor-pointer accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-glow [&::-webkit-slider-thumb]:cursor-grab"
-                  />
-                  <div className="flex justify-between mt-1">
-                    <span className="text-[10px] text-muted-foreground">100 tons</span>
-                    <span className="text-[10px] text-muted-foreground">50,000 tons</span>
-                  </div>
-                </div>
-
-                {/* Live preview */}
-                {reductionNum > 0 && !result && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="bg-primary/5 border border-primary/10 rounded-2xl p-4 overflow-hidden"
-                  >
-                    <p className="text-xs text-muted-foreground">Preview: ~<span className="font-bold text-primary text-sm">{Math.round(reductionNum * factor).toLocaleString()}</span> credits</p>
-                  </motion.div>
+                {validationError && (
+                  <p className="text-xs text-destructive">{validationError}</p>
                 )}
 
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={calculate}
-                  disabled={isCalculating}
-                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-forest text-primary-foreground font-semibold rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-glow disabled:opacity-70"
+                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-forest text-primary-foreground font-semibold rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-glow"
                 >
-                  {isCalculating ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    >
-                      <Sparkles className="w-5 h-5" />
-                    </motion.div>
-                  ) : (
-                    <Sparkles className="w-5 h-5" />
-                  )}
-                  <span className="relative z-10">{isCalculating ? "Calculating..." : "Calculate"}</span>
+                  <Sparkles className="w-5 h-5" />
+                  <span className="relative z-10">Calculate</span>
                 </motion.button>
               </div>
             </motion.div>
@@ -205,7 +631,7 @@ const Calculator = () => {
                             {result.credits.toLocaleString()}
                           </motion.span>
                         </div>
-                        <p className="text-sm text-primary-foreground/40">credits per year • {industry}</p>
+                        <p className="text-sm text-primary-foreground/40">credits per year • {sector}</p>
 
                         {/* Visual bar */}
                         <div className="mt-6">
@@ -328,7 +754,7 @@ const Calculator = () => {
                     <div className="w-20 h-20 rounded-2xl bg-muted flex items-center justify-center mb-6">
                       <Sparkles className="w-8 h-8 text-muted-foreground/40" />
                     </div>
-                    <p className="text-muted-foreground text-center max-w-xs">Select your industry and enter your CO₂ reduction to see estimated earnings.</p>
+                    <p className="text-muted-foreground text-center max-w-xs">Select your sector and enter project details to see estimated earnings.</p>
                   </motion.div>
                 )}
               </AnimatePresence>
