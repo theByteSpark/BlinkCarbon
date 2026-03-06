@@ -10,12 +10,30 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const faqs = [
-  { q: "What are carbon credits?", a: "Permits allowing emission of one ton of CO₂. Companies reducing emissions below limits can sell excess credits to generate revenue." },
-  { q: "How do I start trading?", a: "Assess your carbon footprint, register with a verified registry, then either generate credits through reduction projects or purchase them for offsetting." },
-  { q: "Is carbon trading government-regulated?", a: "Yes — India's Bureau of Energy Efficiency (BEE) under the Ministry of Power oversees the Indian Carbon Market (ICM) with full regulatory backing." },
-  { q: "Who can sell carbon credits?", a: "Any organization demonstrably reducing greenhouse gas emissions — renewable energy plants, reforestation projects, waste management facilities, and more." },
-  { q: "What is the price per credit?", a: "Voluntary market prices in India range from ₹300 to ₹2,500 per credit depending on project quality, verification standard, and vintage year." },
-  { q: "How is carbon reduction verified?", a: "Independent third-party auditors verify reductions using methodologies approved by Verra (VCS), Gold Standard, or India's ICM framework." },
+  { 
+    q: "What are carbon credits?", 
+    a: "A carbon credit represents the reduction or removal of one metric ton of CO₂ or other greenhouse gases. These credits are created through environmental projects like renewable energy, reforestation, and carbon capture." 
+  },
+  { 
+    q: "How do I start trading?", 
+    a: "Start by signing up on the platform and exploring verified carbon projects. You can compare opportunities and connect with trusted providers to participate in the carbon market." 
+  },
+  { 
+    q: "Is carbon trading government-regulated?", 
+    a: "Carbon trading operates in both regulated compliance markets and voluntary carbon markets. Many platforms focus on voluntary markets where verified environmental projects generate credits." 
+  },
+  { 
+    q: "Who can sell carbon credits?", 
+    a: "Organizations that run certified environmental projects—such as renewable energy, forestry, or carbon reduction initiatives—can generate and sell carbon credits." 
+  },
+  { 
+    q: "What is the price per credit?", 
+    a: "The price of carbon credits varies depending on factors like project type, certification standard, location, and market demand." 
+  },
+  { 
+    q: "How is carbon reduction verified?", 
+    a: "Carbon reductions are validated through recognized standards and independent verification processes to ensure that the reported environmental impact is accurate and credible." 
+  }
 ];
 
 const impacts = [
@@ -36,6 +54,7 @@ const Index = () => {
   const [activeFaq, setActiveFaq] = useState(0);
   const [contactForm, setContactForm] = useState({ name: "", email: "", phone: "", reason: contactReasons[0], message: "" });
   const [submitted, setSubmitted] = useState(false);
+  const [showContactForm, setShowContactForm] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
@@ -139,10 +158,9 @@ const Index = () => {
             </motion.div>
           </div>
         </motion.div>
-      </section>
 
-      {/* ─── MARQUEE ─── */}
-      <div className="bg-primary py-4 overflow-hidden">
+         {/* ─── MARQUEE ─── */}
+      <div className="absolute -bottom-1 left-0 w-full bg-primary py-4 overflow-hidden">
         <div className="animate-marquee whitespace-nowrap flex">
           {[...Array(3)].map((_, i) => (
             <span key={i} className="text-xs font-semibold uppercase tracking-[0.3em] text-primary-foreground/60 mx-0">
@@ -151,6 +169,8 @@ const Index = () => {
           ))}
         </div>
       </div>
+        
+      </section>
 
       {/* ─── FAQ — SPLIT LAYOUT ─── */}
       <section className="py-28 md:py-36">
@@ -413,78 +433,119 @@ const Index = () => {
 
             {/* Right form */}
             <div className="md:col-span-7 md:col-start-6">
-              {submitted ? (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-20">
-                  <div className="relative inline-block mb-6">
-                    <CheckCircle className="w-16 h-16 text-primary" />
-                    <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-pulse-ring" />
-                  </div>
-                  <h3 className="text-3xl font-serif font-bold text-foreground mb-3">Thank You!</h3>
-                  <p className="text-muted-foreground">We've received your message and will respond soon.</p>
-                </motion.div>
-              ) : (
-                <motion.form
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }}
-                  className="space-y-6"
-                >
-                  <div className="grid md:grid-cols-2 gap-5">
-                    {[
-                      { label: "Name", type: "text", key: "name", placeholder: "Your name" },
-                      { label: "Email", type: "email", key: "email", placeholder: "you@company.com" },
-                    ].map((field) => (
-                      <div key={field.key}>
-                        <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 block">{field.label}</label>
-                        <input
-                          type={field.type}
-                          required
-                          value={contactForm[field.key as keyof typeof contactForm]}
-                          onChange={(e) => setContactForm({ ...contactForm, [field.key]: e.target.value })}
-                          className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors text-sm"
-                          placeholder={field.placeholder}
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 block">Reason</label>
-                    <select
-                      value={contactForm.reason}
-                      onChange={(e) => setContactForm({ ...contactForm, reason: e.target.value })}
-                      className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground focus:outline-none focus:border-primary transition-colors text-sm appearance-none cursor-pointer"
-                    >
-                      {contactReasons.map((r) => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 block">Message</label>
-                    <textarea
-                      required
-                      rows={4}
-                      value={contactForm.message}
-                      onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                      className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors resize-none text-sm"
-                      placeholder="Tell us more..."
-                    />
-                  </div>
-
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="submit"
-                    className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-forest text-primary-foreground font-semibold rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-glow"
+              <AnimatePresence mode="wait" initial={false}>
+                {!showContactForm ? (
+                  <motion.div
+                    key="contact-cta"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    className="text-center rounded-3xl border border-border bg-background/60 backdrop-blur-sm px-6 py-10 md:px-10 md:py-12"
                   >
-                    <span className="relative z-10">Send Message</span>
-                    <ArrowUpRight className="w-4 h-4 relative z-10 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                  </motion.button>
-                </motion.form>
-              )}
+                    <h3 className="text-2xl md:text-4xl font-serif font-bold text-foreground leading-tight">
+                      Connect With Verified Carbon Credit Opportunities
+                    </h3>
+                    <p className="mt-4 text-sm md:text-base text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+                      Explore, compare, and engage with credible projects driving real environmental impact.
+                    </p>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="button"
+                      onClick={() => setShowContactForm(true)}
+                      aria-expanded={showContactForm}
+                      className="mt-8 group inline-flex items-center gap-3 px-8 py-4 bg-gradient-forest text-primary-foreground font-semibold rounded-2xl transition-all duration-500 hover:shadow-glow"
+                    >
+                      <span>GET IN TOUCH</span>
+                      <ArrowUpRight className="w-4 h-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </motion.button>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="contact-form"
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    className="overflow-hidden"
+                  >
+                    {submitted ? (
+                      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-16">
+                        <div className="relative inline-block mb-6">
+                          <CheckCircle className="w-16 h-16 text-primary" />
+                          <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-pulse-ring" />
+                        </div>
+                        <h3 className="text-3xl font-serif font-bold text-foreground mb-3">Thank You!</h3>
+                        <p className="text-muted-foreground">We've received your message and will respond soon.</p>
+                      </motion.div>
+                    ) : (
+                      <motion.form
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.35 }}
+                        onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }}
+                        className="space-y-6"
+                      >
+                        <div className="grid md:grid-cols-2 gap-5">
+                          {[
+                            { label: "Name", type: "text", key: "name", placeholder: "Your name" },
+                            { label: "Email", type: "email", key: "email", placeholder: "you@company.com" },
+                          ].map((field) => (
+                            <div key={field.key}>
+                              <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 block">{field.label}</label>
+                              <input
+                                type={field.type}
+                                required
+                                value={contactForm[field.key as keyof typeof contactForm]}
+                                onChange={(e) => setContactForm({ ...contactForm, [field.key]: e.target.value })}
+                                className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors text-sm"
+                                placeholder={field.placeholder}
+                              />
+                            </div>
+                          ))}
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 block">Reason</label>
+                          <select
+                            value={contactForm.reason}
+                            onChange={(e) => setContactForm({ ...contactForm, reason: e.target.value })}
+                            className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground focus:outline-none focus:border-primary transition-colors text-sm appearance-none cursor-pointer"
+                          >
+                            {contactReasons.map((r) => (
+                              <option key={r} value={r}>{r}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 block">Message</label>
+                          <textarea
+                            required
+                            rows={4}
+                            value={contactForm.message}
+                            onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                            className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors resize-none text-sm"
+                            placeholder="Tell us more..."
+                          />
+                        </div>
+
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          type="submit"
+                          className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-forest text-primary-foreground font-semibold rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-glow"
+                        >
+                          <span className="relative z-10">Send Message</span>
+                          <ArrowUpRight className="w-4 h-4 relative z-10 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                        </motion.button>
+                      </motion.form>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>

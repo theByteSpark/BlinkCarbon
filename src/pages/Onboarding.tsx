@@ -5,12 +5,36 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const sellerSteps = [
-  { title: "Assess Your Emissions", detail: "Conduct a thorough audit of your industrial processes to identify where you're emitting less than your allocated quota or where reduction projects can generate credits.", icon: "01" },
-  { title: "Choose a Standard", detail: "Select a verification standard — Verra (VCS), Gold Standard, or the Indian Carbon Market (ICM) framework — based on your project type and target buyers.", icon: "02" },
-  { title: "Develop Your Project", detail: "Design and implement your emission reduction or removal project — from renewable energy installations to methane capture or reforestation.", icon: "03" },
-  { title: "Third-Party Verification", detail: "An accredited auditor validates your project design and verifies the actual emission reductions achieved over a monitoring period.", icon: "04" },
-  { title: "Credit Issuance", detail: "Upon successful verification, credits are issued to your registry account. Each credit = one metric ton of CO₂ equivalent reduced.", icon: "05" },
-  { title: "Trade on the Market", detail: "List credits on exchanges or connect with buyers directly through CarbonBridge. Set your price or accept market rates.", icon: "06" },
+  {
+    title: "Check Project Eligibility",
+    detail: "Ensure your project meets BlinkCarbon's environmental and technical criteria required for carbon credit issuance.",
+    icon: "01"
+  },
+  {
+    title: "Register & Onboard",
+    detail: "Create an account, provide the required information, and complete the seller onboarding process.",
+    icon: "02"
+  },
+  {
+    title: "Submit Documents & Get Approval",
+    detail: "Upload all necessary project documentation for review and receive official approval from the platform.",
+    icon: "03"
+  },
+  {
+    title: "Operate & Monitor Your Project",
+    detail: "Implement your project activities and continuously track performance using monitoring tools.",
+    icon: "04"
+  },
+  {
+    title: "Verification & Credit Issuance",
+    detail: "Your project's environmental impact is verified by a third party, and certified carbon credits are issued to your account.",
+    icon: "05"
+  },
+  {
+    title: "Trade Your Carbon Credits",
+    detail: "List your verified carbon credits on the BlinkCarbon marketplace and sell them to interested buyers.",
+    icon: "06"
+  }
 ];
 
 const buyerSteps = [

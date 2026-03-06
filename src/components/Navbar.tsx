@@ -21,9 +21,9 @@ const Navbar = () => {
           <div className="glass-light rounded-2xl px-6 py-3 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3 group">
               <div className="w-9 h-9 rounded-xl bg-gradient-forest flex items-center justify-center relative overflow-hidden">
-                <span className="text-primary-foreground font-bold text-sm relative z-10">CB</span>
+                <span className="text-primary-foreground font-bold text-sm relative z-10">BL</span>
               </div>
-              <span className="font-serif text-lg font-bold text-foreground">CarbonBridge</span>
+              <span className="font-serif text-lg font-bold text-foreground">BlinkCarbon</span>
             </Link>
 
             {/* Desktop */}
