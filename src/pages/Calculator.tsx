@@ -32,6 +32,34 @@ const fieldLabelClass = "text-xs font-semibold uppercase tracking-widest text-mu
 const underlinedInputClass = "w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors text-sm";
 const underlinedSelectClass = "w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground focus:outline-none focus:border-primary transition-colors text-sm appearance-none cursor-pointer";
 
+const initialEnergyData = {
+  isRenewableProject: "Yes",
+  renewableCategory: "Solar",
+  plantCapacity: "",
+  capacityUnit: "MWh",
+  generation: "",
+  unit: "MWh",
+  projectEmission: "",
+};
+
+const initialIndustryData = {
+  industryType: "Pharma",
+  otherIndustryName: "",
+  baseline: "",
+  projectDescription: "",
+  projectEmission: "",
+  leakage: "",
+};
+
+const initialWasteData = {
+  removedGasType: "Methane",
+  methane: "",
+  isElectricityExported: "No",
+  electricityExport: "",
+  electricityExportUnit: "MWh",
+  projectEmission: "",
+};
+
 const toNumber = (value) => {
   const parsed = parseFloat(value);
   return Number.isNaN(parsed) ? 0 : parsed;
@@ -44,37 +72,21 @@ const Calculator = () => {
   const [contact, setContact] = useState({ email: "", phone: "" });
   const [sent, setSent] = useState(false);
   const [validationError, setValidationError] = useState("");
-  const [energyData, setEnergyData] = useState({
-    isRenewableProject: "Yes",
-    renewableCategory: "Solar",
-    plantCapacity: "",
-    capacityUnit: "MWh",
-    generation: "",
-    unit: "MWh",
-    projectEmission: "",
-  });
-  const [industryData, setIndustryData] = useState({
-    industryType: "Pharma",
-    otherIndustryName: "",
-    baseline: "",
-    projectDescription: "",
-    projectEmission: "",
-    leakage: "",
-  });
-  const [wasteData, setWasteData] = useState({
-    removedGasType: "Methane",
-    methane: "",
-    isElectricityExported: "No",
-    electricityExport: "",
-    electricityExportUnit: "MWh",
-    projectEmission: "",
-  });
+  const [energyData, setEnergyData] = useState(initialEnergyData);
+  const [industryData, setIndustryData] = useState(initialIndustryData);
+  const [wasteData, setWasteData] = useState(initialWasteData);
 
   const clearEstimate = () => {
     setResult(null);
     setShowContact(false);
     setSent(false);
     setValidationError("");
+  };
+
+  const resetAllForms = () => {
+    setEnergyData({ ...initialEnergyData });
+    setIndustryData({ ...initialIndustryData });
+    setWasteData({ ...initialWasteData });
   };
 
   const updateEnergyData = (patch) => {
@@ -171,6 +183,10 @@ const Calculator = () => {
 
     const roundedCredits = Math.max(0, Math.round(credits));
 
+    if (roundedCredits === 0) {
+      setValidationError("please enter valid information");
+    }
+
     setResult({
       credits: roundedCredits,
       low: roundedCredits * 300,
@@ -228,6 +244,7 @@ const Calculator = () => {
                         whileTap={{ scale: 0.97 }}
                         onClick={() => {
                           setSector(k);
+                          resetAllForms();
                           clearEstimate();
                         }}
                         className={`text-left px-4 py-3 rounded-xl text-xs font-medium transition-all duration-300 ${

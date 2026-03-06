@@ -38,12 +38,36 @@ const sellerSteps = [
 ];
 
 const buyerSteps = [
-  { title: "Understand Your Footprint", detail: "Calculate total GHG emissions across Scope 1, 2, and 3 to understand how many credits you need to offset.", icon: "01" },
-  { title: "Set Offset Goals", detail: "Define whether you aim for carbon neutrality, net-zero, or partial offset. This determines volume and type of credits needed.", icon: "02" },
-  { title: "Select Credit Type", detail: "Choose between compliance credits (mandatory markets) or voluntary credits based on your regulatory requirements.", icon: "03" },
-  { title: "Due Diligence", detail: "Verify credit quality by checking project verification standard, vintage year, additionality, and co-benefits.", icon: "04" },
-  { title: "Purchase & Retire", detail: "Buy credits through registries or trading platforms. Retire them to officially claim the offset — retired credits cannot be resold.", icon: "05" },
-  { title: "Report & Communicate", detail: "Document offsets in sustainability reports. Transparent communication builds stakeholder trust and regulatory compliance.", icon: "06" },
+  {
+    title: "Explore Verified Credits",
+    detail: "Browse available carbon credits from verified environmental projects listed on the BlinkCarbon platform.",
+    icon: "01"
+  },
+  {
+    title: "Check Credit Availability",
+    detail: "View real-time availability of carbon credits from different projects and providers.",
+    icon: "02"
+  },
+  {
+    title: "Compare Project Details",
+    detail: "Compare carbon credits based on price, vintage year, and project type to choose the best option.",
+    icon: "03"
+  },
+  {
+    title: "Ensure Secure Transfers",
+    detail: "Confirm that credit transfers follow recognized registries and proper compliance standards.",
+    icon: "04"
+  },
+  {
+    title: "Purchase Carbon Credits",
+    detail: "Buy verified carbon credits to support sustainability goals or meet compliance requirements.",
+    icon: "05"
+  },
+  {
+    title: "Track Retirement & Impact",
+    detail: "Monitor the retirement status of credits and track your contribution toward emission reduction.",
+    icon: "06"
+  }
 ];
 
 const Onboarding = () => {
