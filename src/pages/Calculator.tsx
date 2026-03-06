@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Download, Mail, Sparkles, TrendingUp, Zap } from "lucide-react";
+import { jsPDF } from "jspdf";
+import emailjs from "@emailjs/browser";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -194,18 +196,158 @@ const Calculator = () => {
     });
   };
 
-  const handleExport = (e) => {
-    e.preventDefault();
-    setSent(true);
-    const report = `CarbonBridge - Carbon Credit Estimate\n\nsector: ${sector}\nEstimated Credits: ${result?.credits}\nEstimated Value: ₹${result?.low?.toLocaleString()} - ₹${result?.high?.toLocaleString()}\n\nContact: ${contact.email} | ${contact.phone}\n\nDisclaimer: This is an estimate. Actual credits depend on verification and market conditions.`;
-    const blob = new Blob([report], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "carbon-credit-estimate.txt";
-    a.click();
-    URL.revokeObjectURL(url);
+const downloadPDF = () => {
+
+  const doc = new jsPDF();
+
+  doc.setFontSize(18);
+  doc.text("Carbon Credit Calculator Report", 20, 20);
+
+  doc.setFontSize(12);
+
+  doc.text(`Email: ${contact.email}`, 20, 40);
+  doc.text(`Phone: ${contact.phone}`, 20, 50);
+  doc.text(`Sector: ${sector}`, 20, 60);
+
+  let y = 80;
+
+  if (sector === "Energy") {
+    doc.text("Energy Project Details", 20, y);
+    y += 10;
+
+    doc.text(`Renewable Project: ${energyData.isRenewableProject}`, 20, y);
+    y += 10;
+
+    doc.text(`Renewable Category: ${energyData.renewableCategory}`, 20, y);
+    y += 10;
+
+    doc.text(`Plant Capacity: ${energyData.plantCapacity}`, 20, y);
+    y += 10;
+
+    doc.text(`Generation: ${energyData.generation}`, 20, y);
+    y += 10;
+
+    doc.text(`Project Emission: ${energyData.projectEmission}`, 20, y);
+    y += 10;
+  }
+
+  if (sector === "Industry") {
+    doc.text("Industry Project Details", 20, y);
+    y += 10;
+
+    doc.text(`Industry Type: ${industryData.industryType}`, 20, y);
+    y += 10;
+
+    doc.text(`Baseline: ${industryData.baseline}`, 20, y);
+    y += 10;
+
+    doc.text(`Project Description: ${industryData.projectDescription}`, 20, y);
+    y += 10;
+
+    doc.text(`Project Emission: ${industryData.projectEmission}`, 20, y);
+    y += 10;
+
+    doc.text(`Leakage: ${industryData.leakage}`, 20, y);
+    y += 10;
+  }
+
+  if (sector === "Waste handling and disposal") {
+    doc.text("Waste Handling Project", 20, y);
+    y += 10;
+
+    doc.text(`Gas Removed: ${wasteData.removedGasType}`, 20, y);
+    y += 10;
+
+    doc.text(`Methane Destroyed: ${wasteData.methane}`, 20, y);
+    y += 10;
+
+    doc.text(`Electricity Exported: ${wasteData.isElectricityExported}`, 20, y);
+    y += 10;
+
+    doc.text(`Electricity Export Amount: ${wasteData.electricityExport}`, 20, y);
+    y += 10;
+
+    doc.text(`Project Emission: ${wasteData.projectEmission}`, 20, y);
+    y += 10;
+  }
+
+  y += 10;
+
+  doc.text("Carbon Credit Estimate", 20, y);
+  y += 10;
+
+  doc.text(`Credits: ${result?.credits}`, 20, y);
+  y += 10;
+
+  doc.text(`Estimated Value Low: ₹${result?.low}`, 20, y);
+  y += 10;
+
+  doc.text(`Estimated Value High: ₹${result?.high}`, 20, y);
+
+  doc.save("carbon-credit-report.pdf");
+};
+
+
+const handleExport = async (e) => {
+  e.preventDefault();
+
+  let sectorData = {};
+
+  if (sector === "Energy") {
+    sectorData = {
+      renewableProject: energyData.isRenewableProject,
+      renewableCategory: energyData.renewableCategory,
+      plantCapacity: energyData.plantCapacity,
+      generation: energyData.generation,
+      energyEmission: energyData.projectEmission,
+    };
+  }
+
+  if (sector === "Industry") {
+    sectorData = {
+      industryType: industryData.industryType,
+      baseline: industryData.baseline,
+      projectDescription: industryData.projectDescription,
+      industryEmission: industryData.projectEmission,
+      leakage: industryData.leakage,
+    };
+  }
+
+  if (sector === "Waste handling and disposal") {
+    sectorData = {
+      removedGas: wasteData.removedGasType,
+      methane: wasteData.methane,
+      electricityExported: wasteData.isElectricityExported,
+      electricityExport: wasteData.electricityExport,
+      wasteEmission: wasteData.projectEmission,
+    };
+  }
+
+  const templateParams = {
+    email: contact.email,
+    phone: contact.phone,
+    sector: sector,
+
+    credits: result?.credits,
+    low: result?.low,
+    high: result?.high,
+
+    ...sectorData
   };
+
+  try {
+    await emailjs.send(
+      import.meta.env.VITE_EMAIL_SERVICE,
+      import.meta.env.VITE_EMAIL_TEMPLATE,
+      templateParams,
+      import.meta.env.VITE_EMAIL_PUBLIC_KEY
+    );
+
+    setSent(true);
+  } catch (error) {
+    console.error("Email sending failed:", error);
+  }
+};
 
   return (
     <div className="min-h-screen bg-background">
@@ -650,21 +792,6 @@ const Calculator = () => {
                         </div>
                         <p className="text-sm text-primary-foreground/40">credits per year • {sector}</p>
 
-                        {/* Visual bar */}
-                        <div className="mt-6">
-                          <div className="h-3 bg-primary-foreground/10 rounded-full overflow-hidden">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${Math.min((result.credits / 50000) * 100, 100)}%` }}
-                              transition={{ duration: 1.2, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                              className="h-full bg-gradient-to-r from-primary to-amber rounded-full"
-                            />
-                          </div>
-                          <div className="flex justify-between mt-1.5">
-                            <span className="text-[10px] text-primary-foreground/30">0</span>
-                            <span className="text-[10px] text-primary-foreground/30">50,000 credits</span>
-                          </div>
-                        </div>
                       </div>
                     </div>
 
@@ -701,7 +828,7 @@ const Calculator = () => {
                         <motion.button
                           whileHover={{ scale: 1.02, y: -2 }}
                           whileTap={{ scale: 0.98 }}
-                          onClick={() => setShowContact(true)}
+                          onClick={downloadPDF}
                           className="flex-1 group inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-card border border-border font-medium text-sm text-foreground hover:border-primary/20 hover:shadow-soft transition-all"
                         >
                           <Download className="w-4 h-4" />
@@ -719,7 +846,7 @@ const Calculator = () => {
                       </div>
                     ) : sent ? (
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-primary/10 rounded-2xl p-6 text-center">
-                        <p className="text-primary font-semibold">✓ Report downloaded! We'll reach out shortly.</p>
+                        <p className="text-primary font-semibold">✓ Report sent! We'll reach out shortly.</p>
                       </motion.div>
                     ) : (
                       <motion.form
