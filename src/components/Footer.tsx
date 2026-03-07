@@ -14,7 +14,7 @@ const Footer = () => (
     {/* Top CTA Band */}
     <div className="bg-gradient-forest relative">
       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, hsl(var(--amber)) 0%, transparent 50%), radial-gradient(circle at 80% 50%, hsl(var(--sage)) 0%, transparent 50%)' }} />
-      <div className="container mx-auto px-6 py-16 relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+      <div className="container mx-auto px-6 py-8 relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
         <div>
           <h3 className="font-serif text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
             Ready to make an impact?
@@ -42,9 +42,9 @@ const Footer = () => (
       {/* Grid pattern overlay */}
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(hsl(var(--primary-foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary-foreground)) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
 
-      <div className="container mx-auto px-6 pt-20 pb-8 relative z-10">
+      <div className="container mx-auto px-6 pt-8 pb-4 relative z-10">
         {/* Large brand statement */}
-        <div className="mb-16">
+        <div className="mb-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -62,14 +62,14 @@ const Footer = () => (
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground/15 max-w-3xl leading-[1.1] select-none"
+            className="font-serif text-4xl md:text-5xl lg:text-5xl font-bold text-primary-foreground/15 max-w-3xl leading-[1.1] select-none"
           >
             Bridging industries with sustainability
           </motion.p>
         </div>
 
         {/* Content grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 pb-16 border-b border-primary-foreground/10">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-6 pb-6 border-b border-primary-foreground/10">
           {/* About */}
           <div className="md:col-span-4">
             <p className="text-primary-foreground/90 leading-relaxed font-medium max-w-xs">
@@ -123,7 +123,7 @@ const Footer = () => (
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-primary-foreground/70 font-semibold">
             © 2026 CarbonBridge. All rights reserved.
           </p>
