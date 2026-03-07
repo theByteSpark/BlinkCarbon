@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ArrowUpRight, Leaf, Mail, Phone, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -9,29 +9,35 @@ const footerLinks = [
   { to: "/market-info", label: "Market Insights" },
 ];
 
-const Footer = () => (
-  <footer className="relative overflow-hidden">
-    {/* Top CTA Band */}
-    <div className="bg-gradient-forest relative">
-      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, hsl(var(--amber)) 0%, transparent 50%), radial-gradient(circle at 80% 50%, hsl(var(--sage)) 0%, transparent 50%)' }} />
-      <div className="container mx-auto px-6 py-8 relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div>
-          <h3 className="font-serif text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
-            Ready to make an impact?
-          </h3>
-          <p className="text-primary-foreground/80 font-medium">
-            Start trading carbon credits today.
-          </p>
+const Footer = () => {
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
+
+  return (
+    <footer className="relative overflow-hidden">
+      {/* Top CTA Band (Home only) */}
+      {isHomePage && (
+        <div className="bg-gradient-forest relative">
+          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, hsl(var(--amber)) 0%, transparent 50%), radial-gradient(circle at 80% 50%, hsl(var(--sage)) 0%, transparent 50%)' }} />
+          <div className="container mx-auto px-6 py-8 relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h3 className="font-serif text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
+                Ready to make an impact?
+              </h3>
+              <p className="text-primary-foreground/80 font-medium">
+                Start trading carbon credits today.
+              </p>
+            </div>
+            <Link
+              to="/calculator"
+              className="group inline-flex items-center gap-3 px-8 py-4 bg-primary-foreground text-primary rounded-2xl font-bold text-lg hover:scale-105 transition-all duration-300 shadow-elevated"
+            >
+              Get Started
+              <ArrowUpRight className="w-5 h-5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            </Link>
+          </div>
         </div>
-        <Link
-          to="/calculator"
-          className="group inline-flex items-center gap-3 px-8 py-4 bg-primary-foreground text-primary rounded-2xl font-bold text-lg hover:scale-105 transition-all duration-300 shadow-elevated"
-        >
-          Get Started
-          <ArrowUpRight className="w-5 h-5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-        </Link>
-      </div>
-    </div>
+      )}
 
     {/* Main Footer */}
     <div className="bg-deep relative">
@@ -54,7 +60,7 @@ const Footer = () => (
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-foreground/20 to-primary-foreground/5 flex items-center justify-center border border-primary-foreground/10">
               <Leaf className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="font-serif text-3xl font-bold text-primary-foreground">CarbonBridge</span>
+            <span className="font-serif text-3xl font-bold text-primary-foreground">BlinkCarbon</span>
           </motion.div>
           
           <motion.p
@@ -108,11 +114,11 @@ const Footer = () => (
             <div className="flex flex-col gap-4">
               <a href="mailto:hello@carbonbridge.in" className="group flex items-center gap-3 text-primary-foreground/90 font-semibold hover:text-primary-foreground transition-colors">
                 <Mail className="w-4 h-4 text-accent" />
-                hello@carbonbridge.in
+                 contact@blinkcarbon.com
               </a>
               <div className="flex items-center gap-3 text-primary-foreground/90 font-semibold">
                 <Phone className="w-4 h-4 text-accent" />
-                +91 98765 43210
+                +91 74057 64165
               </div>
               <div className="flex items-center gap-3 text-primary-foreground/90 font-semibold">
                 <MapPin className="w-4 h-4 text-accent" />
@@ -125,7 +131,7 @@ const Footer = () => (
         {/* Bottom bar */}
         <div className="pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-primary-foreground/70 font-semibold">
-            © 2026 CarbonBridge. All rights reserved.
+            © 2026 BlinkCarbon All rights reserved.
           </p>
             <a href="https://www.thebytespark.com/" className="text-sm text-primary-foreground/70 font-semibold">
               Crafted by BytesSpark
@@ -137,7 +143,8 @@ const Footer = () => (
         </div>
       </div>
     </div>
-  </footer>
-);
+    </footer>
+  );
+};
 
 export default Footer;
