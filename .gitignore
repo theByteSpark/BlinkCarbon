@@ -73,3 +73,5 @@ vite.config.*.timestamp-*
 *.tmp
 *.temp
 .cache/
+
+.dist.zip

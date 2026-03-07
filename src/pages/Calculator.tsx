@@ -71,7 +71,8 @@ const Calculator = () => {
   const [sector, setSector] = useState("Energy");
   const [result, setResult] = useState(null);
   const [showContact, setShowContact] = useState(false);
-  const [contact, setContact] = useState({ email: "", phone: "" });
+  const [exportMode, setExportMode] = useState("download");
+  const [contact, setContact] = useState({ name: "", email: "", phone: "" });
   const [sent, setSent] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [energyData, setEnergyData] = useState(initialEnergyData);
@@ -205,11 +206,12 @@ const downloadPDF = () => {
 
   doc.setFontSize(12);
 
-  doc.text(`Email: ${contact.email}`, 20, 40);
-  doc.text(`Phone: ${contact.phone}`, 20, 50);
-  doc.text(`Sector: ${sector}`, 20, 60);
+  doc.text(`Name: ${contact.name}`, 20, 40);
+  doc.text(`Email: ${contact.email}`, 20, 50);
+  doc.text(`Phone: ${contact.phone}`, 20, 60);
+  doc.text(`Sector: ${sector}`, 20, 70);
 
-  let y = 80;
+  let y = 90;
 
   if (sector === "Energy") {
     doc.text("Energy Project Details", 20, y);
@@ -291,6 +293,12 @@ const downloadPDF = () => {
 const handleExport = async (e) => {
   e.preventDefault();
 
+  if (exportMode === "download") {
+    downloadPDF();
+    setSent(true);
+    return;
+  }
+
   let sectorData = {};
 
   if (sector === "Energy") {
@@ -324,6 +332,7 @@ const handleExport = async (e) => {
   }
 
   const templateParams = {
+    name: contact.name,
     email: contact.email,
     phone: contact.phone,
     sector: sector,
@@ -828,7 +837,11 @@ const handleExport = async (e) => {
                         <motion.button
                           whileHover={{ scale: 1.02, y: -2 }}
                           whileTap={{ scale: 0.98 }}
-                          onClick={downloadPDF}
+                          onClick={() => {
+                            setExportMode("download");
+                            setSent(false);
+                            setShowContact(true);
+                          }}
                           className="flex-1 group inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-card border border-border font-medium text-sm text-foreground hover:border-primary/20 hover:shadow-soft transition-all"
                         >
                           <Download className="w-4 h-4" />
@@ -837,7 +850,11 @@ const handleExport = async (e) => {
                         <motion.button
                           whileHover={{ scale: 1.02, y: -2 }}
                           whileTap={{ scale: 0.98 }}
-                          onClick={() => setShowContact(true)}
+                          onClick={() => {
+                            setExportMode("email");
+                            setSent(false);
+                            setShowContact(true);
+                          }}
                           className="flex-1 group inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-card border border-border font-medium text-sm text-foreground hover:border-primary/20 hover:shadow-soft transition-all"
                         >
                           <Mail className="w-4 h-4" />
@@ -846,7 +863,11 @@ const handleExport = async (e) => {
                       </div>
                     ) : sent ? (
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-primary/10 rounded-2xl p-6 text-center">
-                        <p className="text-primary font-semibold">✓ Report sent! We'll reach out shortly.</p>
+                        <p className="text-primary font-semibold">
+                          {exportMode === "download"
+                            ? "✓ Report downloaded successfully."
+                            : "✓ Report sent! We'll reach out shortly."}
+                        </p>
                       </motion.div>
                     ) : (
                       <motion.form
@@ -856,6 +877,14 @@ const handleExport = async (e) => {
                         className="bg-card border border-border rounded-2xl p-6 space-y-4"
                       >
                         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Enter details to get your report</p>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Full name"
+                          value={contact.name}
+                          onChange={(e) => setContact({ ...contact, name: e.target.value })}
+                          className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors text-sm"
+                        />
                         <input
                           type="email"
                           required
@@ -878,7 +907,7 @@ const handleExport = async (e) => {
                           type="submit"
                           className="w-full group inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-gradient-forest text-primary-foreground font-semibold rounded-2xl transition-all duration-500 hover:shadow-glow"
                         >
-                          Get Report
+                          {exportMode === "download" ? "Download Report" : "Send Report"}
                           <ArrowUpRight className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                         </motion.button>
                       </motion.form>
