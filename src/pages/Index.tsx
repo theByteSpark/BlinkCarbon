@@ -426,7 +426,7 @@ const Index = () => {
               <div className="mt-10 space-y-4">
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
                   <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center"><Send className="w-3.5 h-3.5 text-primary" /></div>
-                  hello@carbonbridge.in
+                  contact@blinkcarbon.com
                 </div>
               </div>
             </motion.div>
