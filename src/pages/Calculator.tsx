@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Download, Mail, Sparkles, TrendingUp, Zap } from "lucide-react";
 import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import emailjs from "@emailjs/browser";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -197,94 +198,122 @@ const Calculator = () => {
     });
   };
 
+const formatCurrency = (num) =>
+  new Intl.NumberFormat("en-IN").format(num);
+
+const withUnit = (value, unit) => {
+  const cleanValue = String(value ?? "").trim();
+  if (!cleanValue) return "N/A";
+  return `${cleanValue} ${unit}`;
+};
+
 const downloadPDF = () => {
 
   const doc = new jsPDF();
 
-  doc.setFontSize(18);
-  doc.text("Carbon Credit Calculator Report", 20, 20);
+  // Header
+  doc.setFillColor(34,139,34);
+  doc.rect(0,0,210,25,"F");
 
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(18);
+  doc.text("BlinkCarbon",20,15);
+
+  doc.setFontSize(14);
+  doc.text("Carbon Credit Estimation Report",105,15,{align:"center"});
+
+  doc.setTextColor(0,0,0);
+
+  let y = 40;
+
+  // Report Info
+  doc.setFontSize(11);
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`,150,35);
+  doc.text(`Sector: ${sector}`,20,35);
+
+  // Contact Information Table
+  autoTable(doc,{
+    startY:y,
+    head:[["Contact Information",""]],
+    body:[
+      ["Name",contact.name],
+      ["Email",contact.email],
+      ["Phone",contact.phone],
+      ["Sector",sector]
+    ],
+    theme:"grid",
+    headStyles:{fillColor:[34,139,34]}
+  });
+
+  y = doc.lastAutoTable.finalY + 10;
+
+  // Project Details
+  let projectRows = [];
+
+  if(sector==="Energy"){
+    projectRows = [
+      ["Renewable Project",energyData.isRenewableProject],
+      ["Renewable Category", energyData.isRenewableProject === "Yes" ? energyData.renewableCategory : "N/A"],
+      ["Plant Capacity", withUnit(energyData.plantCapacity, energyData.capacityUnit)],
+      ["Generation", withUnit(energyData.generation, energyData.unit)],
+      ["Project Emission", withUnit(energyData.projectEmission, "tCO2e")]
+    ];
+  }
+
+  if(sector==="Industry"){
+    projectRows = [
+      ["Industry Type",industryData.industryType],
+      ["Baseline", withUnit(industryData.baseline, "tCO2e")],
+      ["Project Description",industryData.projectDescription],
+      ["Project Emission", withUnit(industryData.projectEmission, "tCO2e")],
+      ["Leakage", withUnit(industryData.leakage, "tCO2e")]
+    ];
+  }
+
+  if(sector==="Waste handling and disposal"){
+    projectRows = [
+      ["Gas Removed",wasteData.removedGasType],
+      ["Methane Destroyed", withUnit(wasteData.methane, "t")],
+      ["Electricity Exported",wasteData.isElectricityExported],
+      ["Electricity Export Amount", wasteData.isElectricityExported === "Yes" ? withUnit(wasteData.electricityExport, wasteData.electricityExportUnit) : "N/A"],
+      ["Project Emission", withUnit(wasteData.projectEmission, "tCO2e")]
+    ];
+  }
+
+  autoTable(doc,{
+    startY:y,
+    head:[["Project Details",""]],
+    body:projectRows,
+    theme:"grid",
+    headStyles:{fillColor:[34,139,34]}
+  });
+
+  y = doc.lastAutoTable.finalY + 15;
+
+  // Carbon Credit Summary Box
+  doc.setFillColor(240,248,240);
+  doc.rect(15,y-5,180,40,"F");
+
+  doc.setFontSize(14);
+  doc.setFont(undefined,"bold");
+  doc.text("Carbon Credit Estimate",20,y+5);
+
+  doc.setFont(undefined,"normal");
   doc.setFontSize(12);
 
-  doc.text(`Name: ${contact.name}`, 20, 40);
-  doc.text(`Email: ${contact.email}`, 20, 50);
-  doc.text(`Phone: ${contact.phone}`, 20, 60);
-  doc.text(`Sector: ${sector}`, 20, 70);
+  doc.text(`Estimated Credits: ${result?.credits}`,20,y+15);
+  doc.text(`Estimated Value (Low): Rs. ${formatCurrency(result?.low)}`,20,y+25);
+  doc.text(`Estimated Value (High): Rs. ${formatCurrency(result?.high)}`,20,y+35);
 
-  let y = 90;
-
-  if (sector === "Energy") {
-    doc.text("Energy Project Details", 20, y);
-    y += 10;
-
-    doc.text(`Renewable Project: ${energyData.isRenewableProject}`, 20, y);
-    y += 10;
-
-    doc.text(`Renewable Category: ${energyData.renewableCategory}`, 20, y);
-    y += 10;
-
-    doc.text(`Plant Capacity: ${energyData.plantCapacity}`, 20, y);
-    y += 10;
-
-    doc.text(`Generation: ${energyData.generation}`, 20, y);
-    y += 10;
-
-    doc.text(`Project Emission: ${energyData.projectEmission}`, 20, y);
-    y += 10;
-  }
-
-  if (sector === "Industry") {
-    doc.text("Industry Project Details", 20, y);
-    y += 10;
-
-    doc.text(`Industry Type: ${industryData.industryType}`, 20, y);
-    y += 10;
-
-    doc.text(`Baseline: ${industryData.baseline}`, 20, y);
-    y += 10;
-
-    doc.text(`Project Description: ${industryData.projectDescription}`, 20, y);
-    y += 10;
-
-    doc.text(`Project Emission: ${industryData.projectEmission}`, 20, y);
-    y += 10;
-
-    doc.text(`Leakage: ${industryData.leakage}`, 20, y);
-    y += 10;
-  }
-
-  if (sector === "Waste handling and disposal") {
-    doc.text("Waste Handling Project", 20, y);
-    y += 10;
-
-    doc.text(`Gas Removed: ${wasteData.removedGasType}`, 20, y);
-    y += 10;
-
-    doc.text(`Methane Destroyed: ${wasteData.methane}`, 20, y);
-    y += 10;
-
-    doc.text(`Electricity Exported: ${wasteData.isElectricityExported}`, 20, y);
-    y += 10;
-
-    doc.text(`Electricity Export Amount: ${wasteData.electricityExport}`, 20, y);
-    y += 10;
-
-    doc.text(`Project Emission: ${wasteData.projectEmission}`, 20, y);
-    y += 10;
-  }
-
-  y += 10;
-
-  doc.text("Carbon Credit Estimate", 20, y);
-  y += 10;
-
-  doc.text(`Credits: ${result?.credits}`, 20, y);
-  y += 10;
-
-  doc.text(`Estimated Value Low: ₹${result?.low}`, 20, y);
-  y += 10;
-
-  doc.text(`Estimated Value High: ₹${result?.high}`, 20, y);
+  // Footer
+  doc.setFontSize(10);
+  doc.setTextColor(120);
+  doc.text(
+    "Generated by BlinkCarbon Carbon Credit Calculator",
+    105,
+    285,
+    {align:"center"}
+  );
 
   doc.save("carbon-credit-report.pdf");
 };
@@ -304,7 +333,7 @@ const handleExport = async (e) => {
   if (sector === "Energy") {
     sectorData = {
       renewableProject: energyData.isRenewableProject,
-      renewableCategory: energyData.renewableCategory,
+      renewableCategory: energyData.isRenewableProject === "Yes" ? energyData.renewableCategory : "N/A",
       plantCapacity: energyData.plantCapacity,
       generation: energyData.generation,
       energyEmission: energyData.projectEmission,
@@ -423,7 +452,10 @@ const handleExport = async (e) => {
                             value="Yes"
                             checked={energyData.isRenewableProject === "Yes"}
                             onChange={() => {
-                              updateEnergyData({ isRenewableProject: "Yes" });
+                              updateEnergyData({
+                                isRenewableProject: "Yes",
+                                renewableCategory: energyData.renewableCategory || "Solar",
+                              });
                             }}
                             className="accent-primary"
                           />
@@ -436,7 +468,7 @@ const handleExport = async (e) => {
                             value="No"
                             checked={energyData.isRenewableProject === "No"}
                             onChange={() => {
-                              updateEnergyData({ isRenewableProject: "No" });
+                              updateEnergyData({ isRenewableProject: "No", renewableCategory: "" });
                             }}
                             className="accent-primary"
                           />
