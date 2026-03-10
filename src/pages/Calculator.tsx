@@ -37,7 +37,7 @@ const underlinedSelectClass = "w-full px-0 py-3 bg-transparent border-0 border-b
 
 const initialEnergyData = {
   isRenewableProject: "Yes",
-  renewableCategory: "Solar",
+  renewableCategory: "N/A",
   plantCapacity: "",
   capacityUnit: "MWh",
   generation: "",
@@ -46,7 +46,7 @@ const initialEnergyData = {
 };
 
 const initialIndustryData = {
-  industryType: "Pharma",
+  industryType: "N/A",
   otherIndustryName: "",
   baseline: "",
   projectDescription: "",
@@ -55,7 +55,7 @@ const initialIndustryData = {
 };
 
 const initialWasteData = {
-  removedGasType: "Methane",
+  removedGasType: "N/A",
   methane: "",
   isElectricityExported: "No",
   electricityExport: "",
@@ -147,17 +147,22 @@ const Calculator = () => {
   const getValidationError = () => {
     if (sector === "Energy") {
       if (!isFilled(energyData.generation)) return "Enter average yearly electricity generation.";
+      if (energyData.isRenewableProject === "Yes" && energyData.renewableCategory === "N/A") {
+        return "Select renewable project category.";
+      }
       const requiresEmission = energyData.isRenewableProject === "No" || energyData.renewableCategory !== "Captive RE";
       if (requiresEmission && !isFilled(energyData.projectEmission)) return "Enter project emission.";
     }
 
     if (sector === "Industry") {
+      if (industryData.industryType === "N/A") return "Select industry type.";
       if (!isFilled(industryData.baseline)) return "Enter baseline emission.";
       if (!isFilled(industryData.projectEmission)) return "Enter project emission.";
       if (!isFilled(industryData.leakage)) return "Enter leakage emission.";
     }
 
     if (sector === "Waste handling and disposal") {
+      if (wasteData.removedGasType === "N/A") return "Select gas type.";
       if (!isFilled(wasteData.methane)) return "Enter amount of methane destroyed.";
       if (!isFilled(wasteData.projectEmission)) return "Enter project emission.";
       if (wasteData.isElectricityExported === "Yes" && !isFilled(wasteData.electricityExport)) {
@@ -203,8 +208,15 @@ const formatCurrency = (num) =>
 
 const withUnit = (value, unit) => {
   const cleanValue = String(value ?? "").trim();
-  if (!cleanValue) return "N/A";
+  const cleanUnit = String(unit ?? "").trim();
+  if (!cleanValue || !cleanUnit || cleanUnit === "N/A") return "N/A";
   return `${cleanValue} ${unit}`;
+};
+
+type PdfWithAutoTable = jsPDF & {
+  lastAutoTable?: {
+    finalY?: number;
+  };
 };
 
 const downloadPDF = () => {
@@ -245,7 +257,7 @@ const downloadPDF = () => {
     headStyles:{fillColor:[34,139,34]}
   });
 
-  y = doc.lastAutoTable.finalY + 10;
+  y = ((doc as PdfWithAutoTable).lastAutoTable?.finalY ?? y) + 10;
 
   // Project Details
   let projectRows = [];
@@ -288,7 +300,7 @@ const downloadPDF = () => {
     headStyles:{fillColor:[34,139,34]}
   });
 
-  y = doc.lastAutoTable.finalY + 15;
+  y = ((doc as PdfWithAutoTable).lastAutoTable?.finalY ?? y) + 15;
 
   // Carbon Credit Summary Box
   doc.setFillColor(240,248,240);
@@ -318,10 +330,48 @@ const downloadPDF = () => {
   doc.save("carbon-credit-report.pdf");
 };
 
-
 const handleExport = async (e) => {
   e.preventDefault();
 
+  const formData = new FormData();
+
+  formData.append("name", contact.name);
+  formData.append("email", contact.email);
+  formData.append("phone", contact.phone);
+  formData.append("sector", sector);
+
+  formData.append("renewableProject", energyData.isRenewableProject);
+  formData.append("renewableCategory", energyData.renewableCategory);
+  formData.append("plantCapacity", energyData.plantCapacity);
+  formData.append("generation", energyData.generation);
+  formData.append("energyEmission", energyData.projectEmission);
+
+  formData.append("industryType", industryData.industryType);
+  formData.append("baseline", industryData.baseline);
+  formData.append("projectDescription", industryData.projectDescription);
+  formData.append("industryEmission", industryData.projectEmission);
+  formData.append("leakage", industryData.leakage);
+
+  formData.append("removedGas", wasteData.removedGasType);
+  formData.append("methane", wasteData.methane);
+  formData.append("electricityExported", wasteData.isElectricityExported);
+  formData.append("electricityExport", wasteData.electricityExport);
+  formData.append("wasteEmission", wasteData.projectEmission);
+
+  formData.append("credits", result?.credits);
+  formData.append("low", result?.low);
+  formData.append("high", result?.high);
+
+  // Store in Google Sheet (background request)
+  fetch(
+    "https://script.google.com/macros/s/AKfycbzUMvlHT9sgRzWgvBJz3mnD0GmNIxUcqWTvWH57hzIePdritSGt1RUftIYif8uLK06J/exec",
+    {
+      method: "POST",
+      body: formData
+    }
+  ).catch(err => console.log("Sheet error:", err));
+
+  // DOWNLOAD MODE
   if (exportMode === "download") {
     downloadPDF();
     setSent(true);
@@ -365,11 +415,9 @@ const handleExport = async (e) => {
     email: contact.email,
     phone: contact.phone,
     sector: sector,
-
     credits: result?.credits,
     low: result?.low,
     high: result?.high,
-
     ...sectorData
   };
 
@@ -382,6 +430,7 @@ const handleExport = async (e) => {
     );
 
     setSent(true);
+
   } catch (error) {
     console.error("Email sending failed:", error);
   }
@@ -452,10 +501,7 @@ const handleExport = async (e) => {
                             value="Yes"
                             checked={energyData.isRenewableProject === "Yes"}
                             onChange={() => {
-                              updateEnergyData({
-                                isRenewableProject: "Yes",
-                                renewableCategory: energyData.renewableCategory || "Solar",
-                              });
+                              updateEnergyData({ isRenewableProject: "Yes" });
                             }}
                             className="accent-primary"
                           />
@@ -468,7 +514,7 @@ const handleExport = async (e) => {
                             value="No"
                             checked={energyData.isRenewableProject === "No"}
                             onChange={() => {
-                              updateEnergyData({ isRenewableProject: "No", renewableCategory: "" });
+                              updateEnergyData({ isRenewableProject: "No", renewableCategory: "N/A" });
                             }}
                             className="accent-primary"
                           />
@@ -487,6 +533,7 @@ const handleExport = async (e) => {
                           }}
                           className={underlinedSelectClass}
                         >
+                          <option value="N/A">Select</option>
                           {renewableCategories.map((category) => (
                             <option key={category} value={category}>
                               {category}
@@ -577,6 +624,7 @@ const handleExport = async (e) => {
         }}
         className={underlinedSelectClass}
       >
+        <option value="N/A">Select</option>
         {industryTypes.map((type) => (
           <option key={type} value={type}>
             {type}
@@ -674,6 +722,7 @@ const handleExport = async (e) => {
         }}
         className={underlinedSelectClass}
       >
+        <option value="N/A">Select</option>
         <option value="Methane">Methane</option>
         <option value="Other">Other</option>
       </select>
