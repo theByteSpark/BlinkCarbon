@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Download, Mail, Sparkles, TrendingUp, Zap } from "lucide-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import emailjs from "@emailjs/browser";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -67,6 +66,8 @@ const toNumber = (value) => {
   const parsed = parseFloat(value);
   return Number.isNaN(parsed) ? 0 : parsed;
 };
+
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL ?? "http://localhost:5000";
 
 const Calculator = () => {
   const [sector, setSector] = useState("Energy");
@@ -219,8 +220,7 @@ type PdfWithAutoTable = jsPDF & {
   };
 };
 
-const downloadPDF = () => {
-
+const buildPDFDocument = () => {
   const doc = new jsPDF();
 
   // Header
@@ -327,7 +327,40 @@ const downloadPDF = () => {
     {align:"center"}
   );
 
-  doc.save("carbon-credit-report.pdf");
+  return doc;
+};
+
+const getSectorData = () => {
+  if (sector === "Energy") {
+    return {
+      renewableProject: energyData.isRenewableProject,
+      renewableCategory: energyData.isRenewableProject === "Yes" ? energyData.renewableCategory : "N/A",
+      plantCapacity: withUnit(energyData.plantCapacity, energyData.capacityUnit),
+      generation: withUnit(energyData.generation, energyData.unit),
+      energyEmission: withUnit(energyData.projectEmission, "tCO2e"),
+    };
+  }
+
+  if (sector === "Industry") {
+    return {
+      industryType: industryData.industryType,
+      baseline: withUnit(industryData.baseline, "tCO2e"),
+      projectDescription: industryData.projectDescription,
+      industryEmission: withUnit(industryData.projectEmission, "tCO2e"),
+      leakage: withUnit(industryData.leakage, "tCO2e"),
+    };
+  }
+
+  return {
+    removedGas: wasteData.removedGasType,
+    methane: withUnit(wasteData.methane, "t"),
+    electricityExported: wasteData.isElectricityExported,
+    electricityExport:
+      wasteData.isElectricityExported === "Yes"
+        ? withUnit(wasteData.electricityExport, wasteData.electricityExportUnit)
+        : "N/A",
+    wasteEmission: withUnit(wasteData.projectEmission, "tCO2e"),
+  };
 };
 
 const handleExport = async (e) => {
@@ -373,66 +406,50 @@ const handleExport = async (e) => {
 
   // DOWNLOAD MODE
   if (exportMode === "download") {
-    downloadPDF();
+    const doc = buildPDFDocument();
+    doc.save("carbon-credit-report.pdf");
+    setValidationError("");
     setSent(true);
     return;
   }
 
-  let sectorData = {};
-
-  if (sector === "Energy") {
-    sectorData = {
-      renewableProject: energyData.isRenewableProject,
-      renewableCategory: energyData.isRenewableProject === "Yes" ? energyData.renewableCategory : "N/A",
-      plantCapacity: energyData.plantCapacity,
-      generation: energyData.generation,
-      energyEmission: energyData.projectEmission,
-    };
-  }
-
-  if (sector === "Industry") {
-    sectorData = {
-      industryType: industryData.industryType,
-      baseline: industryData.baseline,
-      projectDescription: industryData.projectDescription,
-      industryEmission: industryData.projectEmission,
-      leakage: industryData.leakage,
-    };
-  }
-
-  if (sector === "Waste handling and disposal") {
-    sectorData = {
-      removedGas: wasteData.removedGasType,
-      methane: wasteData.methane,
-      electricityExported: wasteData.isElectricityExported,
-      electricityExport: wasteData.electricityExport,
-      wasteEmission: wasteData.projectEmission,
-    };
-  }
-
-  const templateParams = {
-    name: contact.name,
-    email: contact.email,
-    phone: contact.phone,
-    sector: sector,
-    credits: result?.credits,
-    low: result?.low,
-    high: result?.high,
-    ...sectorData
-  };
+  const sectorData = getSectorData();
 
   try {
-    await emailjs.send(
-      import.meta.env.VITE_EMAIL_SERVICE,
-      import.meta.env.VITE_EMAIL_TEMPLATE,
-      templateParams,
-      import.meta.env.VITE_EMAIL_PUBLIC_KEY
-    );
+    const doc = buildPDFDocument();
+    const pdfDataUri = doc.output("datauristring");
+    const pdfBase64 = pdfDataUri.includes(",") ? pdfDataUri.split(",")[1] : pdfDataUri;
 
+    const response = await fetch(`${BACKEND_BASE_URL}/api/mail/send-report`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: contact.email,
+        pdf: pdfBase64,
+        name: contact.name,
+        phone: contact.phone,
+        sector,
+        credits: result?.credits,
+        low: result?.low,
+        high: result?.high,
+        sectorDetails: sectorData,
+      }),
+    });
+
+    const responseData = await response.json().catch(() => null);
+
+    if (!response.ok || !responseData?.success) {
+      throw new Error(responseData?.message || "Email sending failed");
+    }
+
+    setValidationError("");
     setSent(true);
 
   } catch (error) {
     console.error("Email sending failed:", error);
+    setValidationError("Unable to send report email right now. Please try again.");
   }
 };
 
