@@ -174,6 +174,18 @@ const Calculator = () => {
     return "";
   };
 
+  const getContactValidationError = () => {
+    const email = String(contact.email ?? "").trim();
+    const phone = String(contact.phone ?? "").trim();
+
+    if (!isFilled(contact.name)) return "Enter your full name to continue.";
+    if (!email) return "Enter your email address to continue.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid email address.";
+    if (!phone) return "Enter your phone number to continue.";
+    if (!/^\d{10}$/.test(phone)) return "Phone number must be exactly 10 digits.";
+    return "";
+  };
+
   const calculate = () => {
     const error = getValidationError();
     if (error) {
@@ -182,6 +194,15 @@ const Calculator = () => {
       return;
     }
 
+    const contactError = getContactValidationError();
+    if (contactError) {
+      setValidationError(contactError);
+      setResult(null);
+      setShowContact(true);
+      return;
+    }
+
+    setShowContact(false);
     setValidationError("");
 
     const credits =
@@ -474,8 +495,13 @@ const getSectorData = () => {
   };
 };
 
-const handleExport = async (e) => {
-  e.preventDefault();
+const handleExport = async (mode) => {
+  const contactError = getContactValidationError();
+  if (contactError) {
+    setValidationError(contactError);
+    setShowContact(true);
+    return;
+  }
 
   const formData = new FormData();
 
@@ -516,7 +542,7 @@ const handleExport = async (e) => {
   ).catch(err => console.log("Sheet error:", err));
 
   // DOWNLOAD MODE
-  if (exportMode === "download") {
+  if (mode === "download") {
     const doc = buildPDFDocument();
     doc.save("carbon-credit-report.pdf");
     setValidationError("");
@@ -967,6 +993,62 @@ const handleExport = async (e) => {
                   <p className="text-xs text-destructive">{validationError}</p>
                 )}
 
+                {showContact && !result && (
+                  <motion.form
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      calculate();
+                    }}
+                    className="bg-card border border-border rounded-2xl p-6 space-y-4"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Enter details to view results</p>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Full name"
+                      value={contact.name}
+                      onChange={(e) => setContact({ ...contact, name: e.target.value })}
+                      className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors text-sm"
+                    />
+                    <input
+                      type="email"
+                      required
+                      placeholder="Email address"
+                      value={contact.email}
+                      onChange={(e) => setContact({ ...contact, email: e.target.value })}
+                      className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors text-sm"
+                    />
+                    <input
+                      type="tel"
+                      required
+                      placeholder="Phone number"
+                      value={contact.phone}
+                      onChange={(e) =>
+                        setContact({
+                          ...contact,
+                          phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                        })
+                      }
+                      inputMode="numeric"
+                      maxLength={10}
+                      pattern="\d{10}"
+                      title="Enter exactly 10 digits"
+                      className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors text-sm"
+                    />
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="submit"
+                      className="w-full group inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-gradient-forest text-primary-foreground font-semibold rounded-2xl transition-all duration-500 hover:shadow-glow"
+                    >
+                      Continue to Results
+                      <ArrowUpRight className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </motion.button>
+                  </motion.form>
+                )}
+
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -1041,36 +1123,35 @@ const handleExport = async (e) => {
                     </div>
 
                     {/* Export */}
-                    {!showContact ? (
-                      <div className="flex gap-3">
-                        <motion.button
-                          whileHover={{ scale: 1.02, y: -2 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => {
-                            setExportMode("download");
-                            setSent(false);
-                            setShowContact(true);
-                          }}
-                          className="flex-1 group inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-card border border-border font-medium text-sm text-foreground hover:border-primary/20 hover:shadow-soft transition-all"
-                        >
-                          <Download className="w-4 h-4" />
-                          Download
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.02, y: -2 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => {
-                            setExportMode("email");
-                            setSent(false);
-                            setShowContact(true);
-                          }}
-                          className="flex-1 group inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-card border border-border font-medium text-sm text-foreground hover:border-primary/20 hover:shadow-soft transition-all"
-                        >
-                          <Mail className="w-4 h-4" />
-                          Email Report
-                        </motion.button>
-                      </div>
-                    ) : sent ? (
+                    <div className="flex gap-3">
+                      <motion.button
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          setExportMode("download");
+                          setSent(false);
+                          handleExport("download");
+                        }}
+                        className="flex-1 group inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-card border border-border font-medium text-sm text-foreground hover:border-primary/20 hover:shadow-soft transition-all"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          setExportMode("email");
+                          setSent(false);
+                          handleExport("email");
+                        }}
+                        className="flex-1 group inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-card border border-border font-medium text-sm text-foreground hover:border-primary/20 hover:shadow-soft transition-all"
+                      >
+                        <Mail className="w-4 h-4" />
+                        Email Report
+                      </motion.button>
+                    </div>
+                    {sent && (
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-primary/10 rounded-2xl p-6 text-center">
                         <p className="text-primary font-semibold">
                           {exportMode === "download"
@@ -1078,48 +1159,6 @@ const handleExport = async (e) => {
                             : "✓ Report sent! We'll reach out shortly."}
                         </p>
                       </motion.div>
-                    ) : (
-                      <motion.form
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        onSubmit={handleExport}
-                        className="bg-card border border-border rounded-2xl p-6 space-y-4"
-                      >
-                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Enter details to get your report</p>
-                        <input
-                          type="text"
-                          required
-                          placeholder="Full name"
-                          value={contact.name}
-                          onChange={(e) => setContact({ ...contact, name: e.target.value })}
-                          className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors text-sm"
-                        />
-                        <input
-                          type="email"
-                          required
-                          placeholder="Email address"
-                          value={contact.email}
-                          onChange={(e) => setContact({ ...contact, email: e.target.value })}
-                          className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors text-sm"
-                        />
-                        <input
-                          type="tel"
-                          required
-                          placeholder="Phone number"
-                          value={contact.phone}
-                          onChange={(e) => setContact({ ...contact, phone: e.target.value })}
-                          className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-border text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors text-sm"
-                        />
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          type="submit"
-                          className="w-full group inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-gradient-forest text-primary-foreground font-semibold rounded-2xl transition-all duration-500 hover:shadow-glow"
-                        >
-                          {exportMode === "download" ? "Download Report" : "Send Report"}
-                          <ArrowUpRight className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                        </motion.button>
-                      </motion.form>
                     )}
 
                     <p className="text-[10px] text-muted-foreground text-center">
