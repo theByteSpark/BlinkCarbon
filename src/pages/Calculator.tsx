@@ -222,110 +222,219 @@ type PdfWithAutoTable = jsPDF & {
 
 const buildPDFDocument = () => {
   const doc = new jsPDF();
+  const PAGE_W = 210;
+  const PAGE_H = 297;
 
-  // Header
-  doc.setFillColor(34,139,34);
-  doc.rect(0,0,210,25,"F");
+  // ── Palette ──────────────────────────────────────────────
+  const DARK_GREEN  = [22,  55,  46 ]; // header / section titles
+  const MID_GREEN   = [45, 106,  79 ]; // accent stripe, table head
+  const LIGHT_GREEN = [220, 237, 225]; // highlight box background
+  const ACCENT_GOLD = [180, 140,  60]; // decorative rule
+  const GRAY_TEXT   = [90,  95,  95 ];
+  const BODY_TEXT   = [30,  30,  30 ];
 
-  doc.setTextColor(255,255,255);
-  doc.setFontSize(18);
-  doc.text("BlinkCarbon",20,15);
+  // ── Helpers ───────────────────────────────────────────────
+  const rgb  = (arr) => arr;                    // just an alias for clarity
+  const setFill   = (c) => doc.setFillColor(...c);
+  const setDraw   = (c) => doc.setDrawColor(...c);
+  const setColor  = (c) => doc.setTextColor(...c);
 
-  doc.setFontSize(14);
-  doc.text("Carbon Credit Estimation Report",105,15,{align:"center"});
+  // Thin horizontal rule
+  const rule = (y, color = ACCENT_GOLD, lw = 0.4) => {
+    doc.setLineWidth(lw);
+    setDraw(color);
+    doc.line(20, y, PAGE_W - 20, y);
+  };
 
-  doc.setTextColor(0,0,0);
+  // Filled section-header band
+  const sectionBand = (label, y) => {
+    setFill(DARK_GREEN);
+    doc.roundedRect(20, y, PAGE_W - 40, 9, 1, 1, "F");
+    setColor([255, 255, 255]);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(label.toUpperCase(), 25, y + 6);
+    return y + 14;
+  };
 
-  let y = 40;
+  // Two-column key/value row (no table lib needed for simple pairs)
+  const kvRows = (rows, startY) => {
+    let y = startY;
+    rows.forEach(([key, val], i) => {
+      if (i % 2 === 0) {
+        setFill([245, 248, 246]);
+        doc.rect(20, y - 4, PAGE_W - 40, 8, "F");
+      }
+      setColor(GRAY_TEXT);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text(key, 25, y);
+      setColor(BODY_TEXT);
+      doc.setFont("helvetica", "bold");
+      doc.text(String(val ?? "—"), 105, y);
+      y += 9;
+    });
+    return y + 4;
+  };
 
-  // Report Info
-  doc.setFontSize(11);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`,150,35);
-  doc.text(`Sector: ${sector}`,20,35);
+  // ── PAGE BACKGROUND ───────────────────────────────────────
+  // Subtle left-edge accent bar
+  setFill(DARK_GREEN);
+  doc.rect(0, 0, 7, PAGE_H, "F");
 
-  // Contact Information Table
-  autoTable(doc,{
-    startY:y,
-    head:[["Contact Information",""]],
-    body:[
-      ["Name",contact.name],
-      ["Email",contact.email],
-      ["Phone",contact.phone],
-      ["Sector",sector]
-    ],
-    theme:"grid",
-    headStyles:{fillColor:[34,139,34]}
-  });
+  // Light top strip behind header
+  setFill(DARK_GREEN);
+  doc.rect(7, 0, PAGE_W - 7, 46, "F");
 
-  y = ((doc as PdfWithAutoTable).lastAutoTable?.finalY ?? y) + 10;
+  // ── HEADER ────────────────────────────────────────────────
+  // Company name
+  setColor([255, 255, 255]);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.text("BlinkCarbon", 105, 18, { align: "center" });
 
-  // Project Details
-  let projectRows = [];
+  // Thin gold rule under name
+  doc.setLineWidth(0.6);
+  setDraw(ACCENT_GOLD);
+  doc.line(55, 21, 155, 21);
 
-  if(sector==="Energy"){
-    projectRows = [
-      ["Renewable Project",energyData.isRenewableProject],
-      ["Renewable Category", energyData.isRenewableProject === "Yes" ? energyData.renewableCategory : "N/A"],
-      ["Plant Capacity", withUnit(energyData.plantCapacity, energyData.capacityUnit)],
-      ["Generation", withUnit(energyData.generation, energyData.unit)],
-      ["Project Emission", withUnit(energyData.projectEmission, "tCO2e")]
-    ];
-  }
-
-  if(sector==="Industry"){
-    projectRows = [
-      ["Industry Type",industryData.industryType],
-      ["Baseline", withUnit(industryData.baseline, "tCO2e")],
-      ["Project Description",industryData.projectDescription],
-      ["Project Emission", withUnit(industryData.projectEmission, "tCO2e")],
-      ["Leakage", withUnit(industryData.leakage, "tCO2e")]
-    ];
-  }
-
-  if(sector==="Waste handling and disposal"){
-    projectRows = [
-      ["Gas Removed",wasteData.removedGasType],
-      ["Methane Destroyed", withUnit(wasteData.methane, "t")],
-      ["Electricity Exported",wasteData.isElectricityExported],
-      ["Electricity Export Amount", wasteData.isElectricityExported === "Yes" ? withUnit(wasteData.electricityExport, wasteData.electricityExportUnit) : "N/A"],
-      ["Project Emission", withUnit(wasteData.projectEmission, "tCO2e")]
-    ];
-  }
-
-  autoTable(doc,{
-    startY:y,
-    head:[["Project Details",""]],
-    body:projectRows,
-    theme:"grid",
-    headStyles:{fillColor:[34,139,34]}
-  });
-
-  y = ((doc as PdfWithAutoTable).lastAutoTable?.finalY ?? y) + 15;
-
-  // Carbon Credit Summary Box
-  doc.setFillColor(240,248,240);
-  doc.rect(15,y-5,180,40,"F");
-
-  doc.setFontSize(14);
-  doc.setFont(undefined,"bold");
-  doc.text("Carbon Credit Estimate",20,y+5);
-
-  doc.setFont(undefined,"normal");
-  doc.setFontSize(12);
-
-  doc.text(`Estimated Credits: ${result?.credits}`,20,y+15);
-  doc.text(`Estimated Value (Low): Rs. ${formatCurrency(result?.low)}`,20,y+25);
-  doc.text(`Estimated Value (High): Rs. ${formatCurrency(result?.high)}`,20,y+35);
-
-  // Footer
+  // Report title
+  setColor([200, 230, 210]);
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.setTextColor(120);
-  doc.text(
-    "Generated by BlinkCarbon Carbon Credit Calculator",
-    105,
-    285,
-    {align:"center"}
-  );
+  doc.text("CARBON CREDIT ESTIMATION REPORT", 105, 29, { align: "center" });
+
+  // Date badge
+  const date = new Date().toLocaleDateString("en-GB", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+  setColor([160, 200, 175]);
+  doc.setFontSize(8);
+  doc.text(`Generated: ${date}`, 105, 38, { align: "center" });
+
+  let y = 56;
+
+  // ── CLIENT INFORMATION ────────────────────────────────────
+  y = sectionBand("Client Information", y);
+
+  y = kvRows([
+    ["Full Name",     contact.name ],
+    ["Email Address", contact.email],
+    ["Phone Number",  contact.phone],
+  ], y);
+
+  y += 4;
+  rule(y, MID_GREEN, 0.2);
+  y += 10;
+
+  // ── PROJECT DETAILS ───────────────────────────────────────
+  y = sectionBand("Project Details", y);
+
+  let projectRows = [["Sector", sector]];
+
+  if (sector === "Energy") {
+    projectRows.push(
+      ["Renewable Project",    energyData.isRenewableProject],
+      ["Renewable Category",   energyData.isRenewableProject === "Yes"
+                                  ? energyData.renewableCategory : "N/A"],
+      ["Plant Capacity",       withUnit(energyData.plantCapacity, energyData.capacityUnit)],
+      ["Generation",           withUnit(energyData.generation, energyData.unit)],
+      ["Project Emission",     withUnit(energyData.projectEmission, "tCO2e")],
+    );
+  }
+  if (sector === "Industry") {
+    projectRows.push(
+      ["Industry Type",        industryData.industryType],
+      ["Baseline",             withUnit(industryData.baseline, "tCO2e")],
+      ["Project Description",  industryData.projectDescription],
+      ["Project Emission",     withUnit(industryData.projectEmission, "tCO2e")],
+      ["Leakage",              withUnit(industryData.leakage, "tCO2e")],
+    );
+  }
+  if (sector === "Waste handling and disposal") {
+    projectRows.push(
+      ["Gas Removed",              wasteData.removedGasType],
+      ["Methane Destroyed",        withUnit(wasteData.methane, "t")],
+      ["Electricity Exported",     wasteData.isElectricityExported],
+      ["Electricity Export Amount",wasteData.isElectricityExported === "Yes"
+                                      ? withUnit(wasteData.electricityExport, wasteData.electricityExportUnit)
+                                      : "N/A"],
+      ["Project Emission",         withUnit(wasteData.projectEmission, "tCO2e")],
+    );
+  }
+
+  y = kvRows(projectRows, y);
+
+  y += 4;
+  rule(y, MID_GREEN, 0.2);
+  y += 10;
+
+  // ── CARBON CREDIT ESTIMATION — Highlight Card ─────────────
+  y = sectionBand("Carbon Credit Estimation", y);
+
+  // Card background
+  const cardH = 44;
+  setFill(LIGHT_GREEN);
+  doc.roundedRect(20, y, PAGE_W - 40, cardH, 2, 2, "F");
+
+  // Left accent stripe on card
+  setFill(MID_GREEN);
+  doc.roundedRect(20, y, 4, cardH, 1, 1, "F");
+
+  // Estimated Credits (large)
+  setColor(DARK_GREEN);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("Estimated Credits", 32, y + 10);
+
+  doc.setFontSize(20);
+  doc.text(`${result?.credits ?? "—"} Credits`, 32, y + 24);
+
+  // Value range on right
+  setColor(GRAY_TEXT);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text("ESTIMATED VALUE RANGE", PAGE_W - 25, y + 9, { align: "right" });
+
+  rule(y + 12, [150, 180, 160], 0.2);
+
+  setColor(MID_GREEN);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text(`Low:   Rs. ${formatCurrency(result?.low)}`, PAGE_W - 25, y + 21, { align: "right" });
+
+
+  setColor(DARK_GREEN);
+  doc.setFontSize(11);
+  doc.text(`High:  Rs. ${formatCurrency(result?.high)}`, PAGE_W - 25, y + 34, { align: "right" });
+
+  y += cardH + 6;
+
+  // ── DISCLAIMER ────────────────────────────────────────────
+  setColor([140, 150, 145]);
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(7.5);
+  const disclaimer =
+    "This report provides an estimated carbon credit potential based on the inputs provided and should not " +
+    "be treated as a certified audit or compliance document. Results may vary with verification.";
+  doc.text(disclaimer, 25, y, { maxWidth: PAGE_W - 50 });
+
+  y += 14;
+  rule(y, ACCENT_GOLD, 0.5);
+
+  // ── FOOTER ────────────────────────────────────────────────
+  setFill(DARK_GREEN);
+  doc.rect(7, PAGE_H - 18, PAGE_W - 7, 18, "F");
+
+  setColor([200, 225, 210]);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text("BlinkCarbon  ·  contact@blinkcarbon.com", PAGE_W / 2 + 3, PAGE_H - 7, { align: "center" });
+
+  // Page number
+  setColor([130, 170, 150]);
+  doc.setFontSize(7);
+  doc.text("Page 1 of 1", PAGE_W - 22, PAGE_H - 7);
 
   return doc;
 };
