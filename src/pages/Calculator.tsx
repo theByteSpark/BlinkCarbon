@@ -220,6 +220,8 @@ type PdfWithAutoTable = jsPDF & {
   };
 };
 
+// PDF /////////////////////////////////
+
 const buildPDFDocument = () => {
   const doc = new jsPDF();
   const PAGE_W = 210;

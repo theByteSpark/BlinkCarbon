@@ -134,7 +134,7 @@ const Footer = () => {
             © 2026 BlinkCarbon All rights reserved.
           </p>
             <a href="https://www.thebytespark.com/" className="text-sm text-primary-foreground/70 font-semibold">
-              Crafted by BytesSpark
+              Crafted by ❤️BytesSpark
           </a>
           <div className="flex items-center gap-2 text-sm text-primary-foreground/70 font-semibold">
             <span>Built for a sustainable future</span>

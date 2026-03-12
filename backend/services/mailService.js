@@ -49,23 +49,18 @@ Thank you for using the BlinkCarbon Carbon Credit Calculator.
 
 Your carbon credit estimation report has been generated on ${generatedDate} based on the project details you provided. The detailed report is attached to this email as a PDF.
 
-This report provides an estimated carbon credit potential and indicative value range for your project.
-
 If you would like to explore verified carbon credit opportunities, project registration, or market insights, our team would be happy to assist you.
 
-Contact us anytime at: contact@blinkcarbon.com
-
 Best regards,
-BlinkCarbon Team`,
+BlinkCarbon Team
+contact@blinkcarbon.com`,
     html:
       `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">` +
       `<p>Hello ${escapeHtml(safeName)},</p>` +
       `<p>Thank you for using the BlinkCarbon Carbon Credit Calculator.</p>` +
       `<p>Your carbon credit estimation report has been generated on ${escapeHtml(generatedDate)} based on the project details you provided. The detailed report is attached to this email as a PDF.</p>` +
-      `<p>This report provides an estimated carbon credit potential and indicative value range for your project.</p>` +
       `<p>If you would like to explore verified carbon credit opportunities, project registration, or market insights, our team would be happy to assist you.</p>` +
-      `<p>Contact us anytime at: <a href="mailto:contact@blinkcarbon.com">contact@blinkcarbon.com</a></p>` +
-      `<p>Best regards,<br/>BlinkCarbon Team</p>` +
+      `<p>Best regards,<br/>BlinkCarbon Team <br/> <a href="mailto:contact@blinkcarbon.com">contact@blinkcarbon.com</a></p>` +
       `</div>`,
     attachments: [
       {
