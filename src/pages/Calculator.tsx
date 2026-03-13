@@ -561,28 +561,40 @@ const handleExport = async (mode) => {
 
   const sectorData = getSectorData();
 
-  try {
-    const doc = buildPDFDocument();
-    const pdfDataUri = doc.output("datauristring");
-    const pdfBase64 = pdfDataUri.includes(",") ? pdfDataUri.split(",")[1] : pdfDataUri;
+try {
+  const doc = buildPDFDocument();
+  const pdfDataUri = doc.output("datauristring");
+  const pdfBase64 = pdfDataUri.includes(",") ? pdfDataUri.split(",")[1] : pdfDataUri;
 
-    const response = await fetch(`${BACKEND_BASE_URL}/api/mail/send-report`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: contact.email,
-        pdf: pdfBase64,
-        name: contact.name,
-        phone: contact.phone,
-        sector,
-        credits: result?.credits,
-        low: result?.low,
-        high: result?.high,
-        sectorDetails: sectorData,
-      }),
-    });
+  const generatedDate = new Date().toLocaleDateString("en-GB", {
+    day: "numeric", month: "long", year: "numeric"
+  });
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+      <p>Hello ${contact.name},</p>
+      <p>Thank you for using the BlinkCarbon Carbon Credit Calculator.</p>
+      <p>Your carbon credit estimation report has been generated on ${generatedDate} based on the project details you provided. The detailed report is attached to this email as a PDF.</p>
+      <p>If you would like to explore verified carbon credit opportunities, project registration, or market insights, our team would be happy to assist you.</p>
+      <p>Best regards,<br/>BlinkCarbon Team<br/>
+      <a href="mailto:contact@blinkcarbon.com">contact@blinkcarbon.com</a></p>
+    </div>
+  `;
+
+  const response = await fetch(`${BACKEND_BASE_URL}/api/email/send-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      project: "blinkcarbon",
+      from: "BlinkCarbon <digesh@thebytespark.com>",
+      to: contact.email,
+      subject: "Carbon Credit Report",
+      html: html,
+      pdf: pdfBase64,
+    }),
+  });
+
+  // ... rest of your code
 
     const responseData = await response.json().catch(() => null);
 
