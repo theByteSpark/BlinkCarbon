@@ -506,49 +506,44 @@ const handleExport = async (mode) => {
     return;
   }
 
-  const formData = new FormData();
+ if (!isSheetSubmitted) {
+  setIsSheetSubmitted(true);
 
-  formData.append("name", contact.name);
-  formData.append("email", contact.email);
-  formData.append("phone", contact.phone);
-  formData.append("sector", sector);
-
-  formData.append("renewableProject", energyData.isRenewableProject);
-  formData.append("renewableCategory", energyData.renewableCategory);
-  formData.append("plantCapacity", energyData.plantCapacity);
-  formData.append("generation", energyData.generation);
-  formData.append("energyEmission", energyData.projectEmission);
-
-  formData.append("industryType", industryData.industryType);
-  formData.append("baseline", industryData.baseline);
-  formData.append("projectDescription", industryData.projectDescription);
-  formData.append("industryEmission", industryData.projectEmission);
-  formData.append("leakage", industryData.leakage);
-
-  formData.append("removedGas", wasteData.removedGasType);
-  formData.append("methane", wasteData.methane);
-  formData.append("electricityExported", wasteData.isElectricityExported);
-  formData.append("electricityExport", wasteData.electricityExport);
-  formData.append("wasteEmission", wasteData.projectEmission);
-
-  formData.append("credits", result?.credits);
-  formData.append("low", result?.low);
-  formData.append("high", result?.high);
-
-  // Store in Google Sheet once per result to avoid duplicate rows
-  if (!isSheetSubmitted) {
-    setIsSheetSubmitted(true);
-    fetch(
-      "https://script.google.com/macros/s/AKfycbzUMvlHT9sgRzWgvBJz3mnD0GmNIxUcqWTvWH57hzIePdritSGt1RUftIYif8uLK06J/exec",
-      {
-        method: "POST",
-        body: formData
+  fetch(`${BACKEND_BASE_URL}/api/sheet/save-sheet`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      project: "blinkcarbon",
+      data: {
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone,
+        sector: sector,
+        renewableProject: energyData.isRenewableProject,
+        renewableCategory: energyData.renewableCategory,
+        plantCapacity: energyData.plantCapacity,
+        generation: energyData.generation,
+        energyEmission: energyData.projectEmission,
+        industryType: industryData.industryType,
+        baseline: industryData.baseline,
+        projectDescription: industryData.projectDescription,
+        industryEmission: industryData.projectEmission,
+        leakage: industryData.leakage,
+        removedGas: wasteData.removedGasType,
+        methane: wasteData.methane,
+        electricityExported: wasteData.isElectricityExported,
+        electricityExport: wasteData.electricityExport,
+        wasteEmission: wasteData.projectEmission,
+        credits: result?.credits,
+        low: result?.low,
+        high: result?.high,
       }
-    ).catch(err => {
-      console.log("Sheet error:", err);
-      setIsSheetSubmitted(false);
-    });
-  }
+    })
+  }).catch(err => {
+    console.error("Sheet error:", err);
+    setIsSheetSubmitted(false);
+  });
+} 
 
   // DOWNLOAD MODE
   if (mode === "download") {
