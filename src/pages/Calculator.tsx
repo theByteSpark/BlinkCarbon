@@ -76,6 +76,7 @@ const Calculator = () => {
   const [exportMode, setExportMode] = useState("download");
   const [contact, setContact] = useState({ name: "", email: "", phone: "" });
   const [sent, setSent] = useState(false);
+  const [isSheetSubmitted, setIsSheetSubmitted] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [energyData, setEnergyData] = useState(initialEnergyData);
   const [industryData, setIndustryData] = useState(initialIndustryData);
@@ -85,6 +86,7 @@ const Calculator = () => {
     setResult(null);
     setShowContact(false);
     setSent(false);
+    setIsSheetSubmitted(false);
     setValidationError("");
   };
 
@@ -223,6 +225,7 @@ const Calculator = () => {
       low: roundedCredits * 300,
       high: roundedCredits * 2500,
     });
+    setIsSheetSubmitted(false);
   };
 
 const formatCurrency = (num) =>
@@ -532,14 +535,20 @@ const handleExport = async (mode) => {
   formData.append("low", result?.low);
   formData.append("high", result?.high);
 
-  // Store in Google Sheet (background request)
-  fetch(
-    "https://script.google.com/macros/s/AKfycbzUMvlHT9sgRzWgvBJz3mnD0GmNIxUcqWTvWH57hzIePdritSGt1RUftIYif8uLK06J/exec",
-    {
-      method: "POST",
-      body: formData
-    }
-  ).catch(err => console.log("Sheet error:", err));
+  // Store in Google Sheet once per result to avoid duplicate rows
+  if (!isSheetSubmitted) {
+    setIsSheetSubmitted(true);
+    fetch(
+      "https://script.google.com/macros/s/AKfycbzUMvlHT9sgRzWgvBJz3mnD0GmNIxUcqWTvWH57hzIePdritSGt1RUftIYif8uLK06J/exec",
+      {
+        method: "POST",
+        body: formData
+      }
+    ).catch(err => {
+      console.log("Sheet error:", err);
+      setIsSheetSubmitted(false);
+    });
+  }
 
   // DOWNLOAD MODE
   if (mode === "download") {
