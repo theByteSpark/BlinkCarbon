@@ -67,7 +67,7 @@ const MarketInfo = () => (
           <h1 className="text-5xl md:text-7xl font-serif font-bold text-foreground mt-4 leading-[0.95]">
             Carbon Market
             <br />
-            <span className="italic text-muted-foreground">at a Glance</span>
+            at a Glance
           </h1>
           <p className="text-muted-foreground text-lg mt-6 max-w-lg">Current rates, scope, regulations, and the massive opportunity ahead.</p>
         </motion.div>

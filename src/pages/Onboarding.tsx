@@ -145,7 +145,7 @@ const Onboarding = () => {
             <h1 className="text-5xl md:text-7xl font-serif font-bold text-foreground mt-4 leading-[0.95]">
               Your Path to
               <br />
-              Carbon <span className="italic text-muted-foreground">Trading</span>
+              Carbon Trading
             </h1>
             <p className="text-muted-foreground text-lg mt-6 max-w-lg">Whether you're generating credits or purchasing offsets — here's your roadmap. Scroll down to explore each step.</p>
           </motion.div>

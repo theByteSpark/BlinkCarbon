@@ -618,7 +618,7 @@ try {
             <h1 className="text-5xl md:text-7xl font-serif font-bold text-foreground mt-4 leading-[0.95]">
               Estimate Your
               <br />
-              <span className="italic text-muted-foreground">Earnings</span>
+              Earnings
             </h1>
             <p className="text-muted-foreground text-lg mt-6 max-w-lg">Discover how much your emission reductions could be worth in today's carbon credit market.</p>
           </motion.div>
