@@ -67,7 +67,7 @@ const toNumber = (value) => {
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL ?? "http://localhost:5000";
+const BACKEND_BASE_URL = "https://utility-backend-service.onrender.com";
 
 const Calculator = () => {
   const [sector, setSector] = useState("Energy");
@@ -588,8 +588,6 @@ try {
       pdf: pdfBase64,
     }),
   });
-
-  // ... rest of your code
 
     const responseData = await response.json().catch(() => null);
 
